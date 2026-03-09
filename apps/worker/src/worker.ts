@@ -15,8 +15,8 @@ const worker = new Worker(
 
     switch (job.name) {
       case JobNames.PROCESS_EMAILS:
-        // const { emailAgent } = await import('./agents/email.agent')
-        // await emailAgent.run()
+        const { emailAgent } = await import('./agents/email.agent')
+        await emailAgent.run()
         console.log('Email agent coming soon...')
         break
 
