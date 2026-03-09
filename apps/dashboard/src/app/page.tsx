@@ -1,6 +1,19 @@
 import Sidebar from '@/components/Sidebar'
+import { getSupabase } from '@/lib/supabase'
 
-export default function Home() {
+export default async function Home() {
+  const supabase = getSupabase()
+
+  const { count: emailCount } = await supabase
+    .from('emails')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'pending_review')
+
+  const { count: leadCount } = await supabase
+    .from('leads')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'new')
+
   return (
     <div style={{ display: 'flex' }}>
       <Sidebar />
@@ -40,8 +53,8 @@ export default function Home() {
           marginBottom: '48px'
         }}>
           {[
-            { label: 'Emails to Review', value: '—', color: 'var(--gold)' },
-            { label: 'New Leads', value: '—', color: 'var(--teal)' },
+            { label: 'Emails to Review', value: emailCount ?? 0, color: 'var(--gold)' },
+            { label: 'New Leads', value: leadCount ?? 0, color: 'var(--teal)' },
             { label: 'Active Projects', value: '—', color: 'var(--charcoal)' },
             { label: 'Agents Running', value: '2', color: 'var(--charcoal)' },
           ].map((stat) => (
