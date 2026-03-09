@@ -7,7 +7,7 @@ import logger from '../../lib/logger'
 export const emailAgent = {
   run: async () => {
     const supabase = getSupabase()
-    logger.info('📧 Email agent starting...')
+    logger.info('Email agent starting...')
 
     const { data: accounts, error } = await supabase
       .from('connected_accounts')
@@ -68,7 +68,7 @@ export const emailAgent = {
             received_at: processed.receivedAt
           })
 
-          logger.info(`✅ Processed: ${processed.subject} [${processed.category}]`)
+          logger.info(`Processed: ${processed.subject} [${processed.category}]`)
         }
 
         await supabase.from('agent_logs').insert({
@@ -87,6 +87,6 @@ export const emailAgent = {
       }
     }
 
-    logger.info('📧 Email agent finished')
+    logger.info('Email agent finished')
   }
 }

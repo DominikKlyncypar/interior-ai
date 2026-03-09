@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "nodemon --watch src --ext ts --exec \"tsx src/worker.ts\"",
     "build": "tsc",
-    "start": "node dist/worker.js"
+    "start": "node dist/worker.js",
+    "trigger:email": "tsx src/scripts/trigger.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
