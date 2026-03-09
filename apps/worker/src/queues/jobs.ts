@@ -1,7 +1,5 @@
 import { Queue } from 'bullmq'
-import connection from '../lib/redis'
-
-export const agentQueue = new Queue('agent-jobs', { connection })
+import getConnection from '../lib/redis'
 
 export const JobNames = {
   PROCESS_EMAILS: 'process-emails',
@@ -9,3 +7,5 @@ export const JobNames = {
   UPDATE_CRM: 'update-crm',
   FINANCIAL_REPORT: 'financial-report',
 } as const
+
+export const getAgentQueue = () => new Queue('agent-jobs', { connection: getConnection() })

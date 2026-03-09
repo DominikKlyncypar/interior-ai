@@ -1,8 +1,10 @@
 import dotenv from 'dotenv'
 dotenv.config()
 import { Worker } from 'bullmq'
-import connection from './lib/redis'
+import getConnection from './lib/redis'
 import { JobNames } from './queues/jobs'
+
+const connection = getConnection()
 
 console.log('Worker starting...')
 
