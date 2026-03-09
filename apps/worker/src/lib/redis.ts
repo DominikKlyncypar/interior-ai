@@ -1,4 +1,5 @@
 import { ConnectionOptions } from 'bullmq'
+import logger from './logger'
 
 const getConnection = (): ConnectionOptions => {
   const config = {
@@ -9,6 +10,7 @@ const getConnection = (): ConnectionOptions => {
       rejectUnauthorized: false
     }
   }
+  logger.debug({ host: config.host, port: config.port }, 'Redis connection config')
   return config
 }
 

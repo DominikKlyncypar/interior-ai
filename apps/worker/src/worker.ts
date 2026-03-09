@@ -3,42 +3,40 @@ dotenv.config()
 import { Worker } from 'bullmq'
 import getConnection from './lib/redis'
 import { JobNames } from './queues/jobs'
+import logger from './lib/logger'
 
 const connection = getConnection()
 
-console.log('🤖 Worker starting...')
+logger.info('Worker starting...')
 
 const worker = new Worker(
   'agent-jobs',
   async (job) => {
-    console.log(`Running job: ${job.name}`)
+    logger.info(`Running job: ${job.name}`)
 
     switch (job.name) {
       case JobNames.PROCESS_EMAILS:
-        const { emailAgent } = await import('./agents/email.agent')
+        const { emailAgent } = await import('./agents/email/email.agent')
         await emailAgent.run()
-        console.log('Email agent coming soon...')
         break
 
       case JobNames.SCAN_LEADS:
-        // const { leadsAgent } = await import('./agents/leads.agent')
-        // await leadsAgent.run()
-        console.log('Leads agent coming soon...')
+        logger.info('Leads agent coming soon...')
         break
 
       default:
-        console.warn(`Unknown job: ${job.name}`)
+        logger.warn(`Unknown job: ${job.name}`)
     }
   },
   { connection }
 )
 
 worker.on('completed', (job) => {
-  console.log(`✅ Job completed: ${job.name}`)
+  logger.info(`Job completed: ${job.name}`)
 })
 
 worker.on('failed', (job, err) => {
-  console.error(`❌ Job failed: ${job?.name}`, err.message)
+  logger.error(`Job failed: ${job?.name} - ${err.message}`)
 })
 
-console.log('✅ Worker ready and listening for jobs')
+logger.info('Worker ready and listening for jobs')
