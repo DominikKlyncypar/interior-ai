@@ -6,7 +6,7 @@ import { JobNames } from './queues/jobs'
 
 const connection = getConnection()
 
-console.log('Worker starting...')
+console.log('🤖 Worker starting...')
 
 const worker = new Worker(
   'agent-jobs',
@@ -41,4 +41,4 @@ worker.on('failed', (job, err) => {
   console.error(`❌ Job failed: ${job?.name}`, err.message)
 })
 
-console.log('Worker ready and listening for jobs')
+console.log('✅ Worker ready and listening for jobs')
