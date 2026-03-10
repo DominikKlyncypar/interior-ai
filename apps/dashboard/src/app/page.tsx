@@ -152,7 +152,7 @@ export default function HomePage() {
       {/* Stats strip */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
+        gridTemplateColumns: 'repeat(3, 1fr)',
         gap: '1px',
         background: 'rgba(255,255,255,0.06)',
         borderTop: '1px solid rgba(255,255,255,0.06)',
@@ -162,8 +162,7 @@ export default function HomePage() {
         {[
           { value: '8', label: 'AI Agents' },
           { value: '24/7', label: 'Always Running' },
-          { value: '10min', label: 'Check Interval' },
-          { value: '1', label: 'Developer Needed' },
+          { value: '10 min', label: 'Check Interval' },
         ].map((stat) => (
           <div key={stat.label} style={{
             padding: '40px 48px',
