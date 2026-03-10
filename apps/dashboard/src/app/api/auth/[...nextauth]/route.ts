@@ -40,7 +40,7 @@ const handler = NextAuth({
             logger.error(`Supabase upsert error: ${error.message}`)
             return false
           }
-          logger.info(`✅ Connected account saved for ${profile?.email}`)
+          logger.info(`Connected account saved for ${profile?.email}`)
         }
         return true
       } catch (err: any) {

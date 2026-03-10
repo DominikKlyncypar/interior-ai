@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 const nav = [
-  { label: 'Overview', href: '/', icon: '◈' },
+  { label: 'Overview', href: '/dashboard', icon: '◈' },
   { label: 'Emails', href: '/emails', icon: '✉' },
   { label: 'Leads', href: '/leads', icon: '◎' },
   { label: 'Settings', href: '/settings', icon: '⚙' },
