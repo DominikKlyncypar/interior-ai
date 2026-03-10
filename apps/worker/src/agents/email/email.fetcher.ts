@@ -1,5 +1,6 @@
 import { google } from 'googleapis'
 import { ConnectedAccount, RawEmail } from './email.types'
+import logger from '../../lib/logger'
 
 export const createGmailClient = (account: ConnectedAccount) => {
   const oauth2Client = new google.auth.OAuth2(
@@ -18,6 +19,16 @@ export const createGmailClient = (account: ConnectedAccount) => {
 export const fetchUnreadEmails = async (account: ConnectedAccount): Promise<RawEmail[]> => {
   const gmail = createGmailClient(account)
 
+  // Convert fetch_since to Gmail date filter format
+  const fetchSince = account.fetch_since 
+    ? new Date(account.fetch_since) 
+    : new Date()
+  
+  const after = Math.floor(fetchSince.getTime() / 1000)
+
+  logger.info(`Fetching emails after: ${new Date(after * 1000).toISOString()}`)
+
+  // Gmail search query to get unread emails in the inbox received after fetch_since
   const response = await gmail.users.messages.list({
     userId: 'me',
     q: 'is:unread label:inbox category:primary',
@@ -52,7 +63,12 @@ export const fetchUnreadEmails = async (account: ConnectedAccount): Promise<RawE
     })
   }
 
-  return emails
+  // Filter out emails older than fetch_since
+  const filteredEmails = emails.filter(email => 
+    email.receivedAt >= fetchSince
+  )
+
+  return filteredEmails
 }
 
 export const markAsRead = async (account: ConnectedAccount, emailId: string) => {

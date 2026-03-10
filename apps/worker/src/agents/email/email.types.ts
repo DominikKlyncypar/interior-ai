@@ -27,4 +27,5 @@ export interface ConnectedAccount {
   access_token: string
   refresh_token: string
   expires_at: string
+  fetch_since: string
 }

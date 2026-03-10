@@ -1,6 +1,6 @@
 import dotenv from 'dotenv'
 dotenv.config()
-import { Worker } from 'bullmq'
+import { Worker, QueueEvents } from 'bullmq'
 import getConnection from './lib/redis'
 import { JobNames } from './queues/jobs'
 import logger from './lib/logger'

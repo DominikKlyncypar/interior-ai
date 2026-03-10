@@ -34,7 +34,8 @@ const handler = NextAuth({
             provider: 'gmail',
             access_token: account.access_token,
             refresh_token: account.refresh_token,
-            expires_at: new Date(account.expires_at! * 1000).toISOString()
+            expires_at: new Date(account.expires_at! * 1000).toISOString(),
+            fetch_since: new Date().toISOString()
           }, {
             onConflict: 'user_email,provider'
           })
@@ -49,6 +50,9 @@ const handler = NextAuth({
         logger.error(`signIn error: ${err.message}`)
         return false
       }
+    },
+    async redirect({ url, baseUrl }) {
+      return `${baseUrl}/onboarding`
     },
     async session({ session }) {
       return session
