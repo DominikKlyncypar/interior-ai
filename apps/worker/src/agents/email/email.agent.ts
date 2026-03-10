@@ -30,7 +30,6 @@ export const emailAgent = {
         status: 'started',
         summary: `Processing emails for ${account.user_email}`
       })
-
       try {
         const emails = await fetchUnreadEmails(account)
         logger.info(`Found ${emails.length} unread emails`)
@@ -57,6 +56,7 @@ export const emailAgent = {
           }
 
           await supabase.from('emails').insert({
+            gmail_id: email.id,
             contact_id: contactId,
             subject: processed.subject,
             body: processed.body,
@@ -67,7 +67,6 @@ export const emailAgent = {
             status: 'pending_review',
             received_at: processed.receivedAt
           })
-
           logger.info(`Processed: ${processed.subject} [${processed.category}]`)
         }
 

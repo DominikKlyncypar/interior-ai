@@ -8,9 +8,15 @@ export const processEmail = async (email: RawEmail): Promise<ProcessedEmail> => 
 
 Your job is to read this email and respond with a JSON object containing:
 1. category: one of "new_lead", "existing_client", "vendor", "urgent", "admin", "spam"
+   - Only use "spam" for obvious mass marketing emails with no personal relevance
+   - Receipts, notifications, and personal emails should be "admin"
+   - Anything that could be a business opportunity should be "new_lead"
 2. urgency: one of "high", "medium", "low"
 3. summary: one sentence describing what this email is about
-4. draftReply: a reply in our voice — professional, warm, concise. Never salesy. Sign off as "The Team".
+4. draftReply: a helpful, professional reply in our voice — warm, concise, never salesy. 
+   - For admin/notification emails, draft a brief acknowledgment
+   - For leads, draft an enthusiastic but professional response
+   - Sign off as "The Team"
 
 Email:
 Subject: ${email.subject}

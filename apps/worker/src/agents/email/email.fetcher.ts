@@ -20,25 +20,26 @@ export const fetchUnreadEmails = async (account: ConnectedAccount): Promise<RawE
 
   const response = await gmail.users.messages.list({
     userId: 'me',
-    q: 'is:unread',
+    q: 'is:unread label:inbox category:primary',
     maxResults: 10
   })
 
   const messages = response.data.messages || []
   const emails: RawEmail[] = []
 
+  // Fetch details sequentially to preserve order
   for (const message of messages) {
     const detail = await gmail.users.messages.get({
       userId: 'me',
       id: message.id!,
-      format: 'full'
+      format: 'metadata',
+      metadataHeaders: ['Subject', 'From', 'Date']
     })
 
     const headers = detail.data.payload?.headers || []
     const subject = headers.find(h => h.name === 'Subject')?.value || '(no subject)'
     const from = headers.find(h => h.name === 'From')?.value || ''
     const date = headers.find(h => h.name === 'Date')?.value || ''
-
     const body = detail.data.snippet || ''
 
     emails.push({
@@ -52,4 +53,15 @@ export const fetchUnreadEmails = async (account: ConnectedAccount): Promise<RawE
   }
 
   return emails
+}
+
+export const markAsRead = async (account: ConnectedAccount, emailId: string) => {
+  const gmail = createGmailClient(account)
+  await gmail.users.messages.modify({
+    userId: 'me',
+    id: emailId,
+    requestBody: {
+      removeLabelIds: ['UNREAD']
+    }
+  })
 }

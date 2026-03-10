@@ -4,6 +4,7 @@ import { Worker } from 'bullmq'
 import getConnection from './lib/redis'
 import { JobNames } from './queues/jobs'
 import logger from './lib/logger'
+import { startScheduler } from './scheduler'
 
 const connection = getConnection()
 
@@ -40,3 +41,5 @@ worker.on('failed', (job, err) => {
 })
 
 logger.info('Worker ready and listening for jobs')
+
+startScheduler()

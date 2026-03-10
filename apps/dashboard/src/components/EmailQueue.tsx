@@ -52,12 +52,45 @@ export default function EmailQueue() {
     setLoading(false)
   }
 
-  const updateStatus = async (id: string, status: string) => {
-    const supabase = getSupabase()
-    await supabase.from('emails').update({ status }).eq('id', id)
-    setEmails(emails.filter(e => e.id !== id))
-    if (selected?.id === id) setSelected(null)
+const updateStatus = async (id: string, status: string) => {
+  const supabase = getSupabase()
+
+  if (status === 'approved') {
+      // Get the current draft reply from textarea
+      const textarea = document.querySelector('textarea') as HTMLTextAreaElement
+      const draftReply = textarea?.value || selected?.draft_reply || ''
+
+      const res = await fetch('/api/emails/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ emailId: id, draftReply })
+      })
+
+      if (!res.ok) {
+          const err = await res.json()
+          console.error('Send failed:', err)
+          return
+        }
+    await fetch('/api/emails/mark-read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emailId: id })
+    })
+  } else {
+      await supabase.from('emails').update({ status }).eq('id', id)
+
+      if (status === 'dismissed') {
+          await fetch('/api/emails/mark-read', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ emailId: id })
+          })
+      }
   }
+
+  setEmails(emails.filter(e => e.id !== id))
+  if (selected?.id === id) setSelected(null)
+}
 
   if (loading) return (
     <div style={{ fontFamily: 'var(--font-dm-mono)', fontSize: '11px', color: 'var(--mid)' }}>
