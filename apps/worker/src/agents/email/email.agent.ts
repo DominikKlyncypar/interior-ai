@@ -36,7 +36,17 @@ export const emailAgent = {
 
         for (const email of emails) {
           const processed = await processEmail(email)
+          
+          const { data: existing } = await supabase
+            .from('emails')
+            .select('id')
+            .eq('gmail_id', email.id)
+            .single()
 
+          if (existing) {
+            logger.info(`Skipping already processed email: ${email.id}`)
+            continue
+          }
           let contactId = null
           const { data: existingContact } = await supabase
             .from('contacts')
