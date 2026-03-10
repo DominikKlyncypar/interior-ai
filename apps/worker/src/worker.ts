@@ -40,6 +40,12 @@ worker.on('failed', (job, err) => {
   logger.error(`Job failed: ${job?.name} - ${err.message}`)
 })
 
+const queueEvents = new QueueEvents('agent-jobs', { connection })
+
+queueEvents.on('stalled', ({ jobId }) => {
+  logger.warn(`Job stalled: ${jobId} — will retry automatically`)
+})
+
 logger.info('Worker ready and listening for jobs')
 
 startScheduler()
