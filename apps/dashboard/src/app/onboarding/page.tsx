@@ -27,7 +27,7 @@ export default function OnboardingPage() {
       body: JSON.stringify({ fetchSince: fetchSince.toISOString() })
     })
 
-    router.push('/')
+    router.push('/dashboard')
   }
 
   return (

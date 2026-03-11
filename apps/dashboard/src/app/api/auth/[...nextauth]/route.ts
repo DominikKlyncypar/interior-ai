@@ -1,5 +1,6 @@
 import NextAuth from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
+import AzureADProvider from 'next-auth/providers/azure-ad'
 import { getSupabase } from '@/lib/supabase'
 import logger from '@/lib/logger'
 
@@ -15,16 +16,23 @@ const handler = NextAuth({
           prompt: 'consent'
         }
       }
+    }),
+    AzureADProvider({
+      clientId: process.env.AZURE_AD_CLIENT_ID ?? '',
+      clientSecret: process.env.AZURE_AD_CLIENT_SECRET ?? '',
+      tenantId: process.env.AZURE_AD_TENANT_ID ?? 'common',
+      authorization: {
+        params: {
+          scope: 'openid email profile offline_access https://graph.microsoft.com/Mail.ReadWrite https://graph.microsoft.com/Mail.Send'
+        }
+      }
     })
   ],
   callbacks: {
     async signIn({ account, profile }) {
-      if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-        logger.error('Missing Google credentials')
-        return false
-      }
       try {
         const supabase = getSupabase()
+
         if (account?.provider === 'google') {
           const { error } = await supabase.from('connected_accounts').upsert({
             user_email: profile?.email,
@@ -40,8 +48,27 @@ const handler = NextAuth({
             logger.error(`Supabase upsert error: ${error.message}`)
             return false
           }
-          logger.info(`Connected account saved for ${profile?.email}`)
+          logger.info(`Gmail account saved for ${profile?.email}`)
         }
+
+        if (account?.provider === 'azure-ad') {
+          const { error } = await supabase.from('connected_accounts').upsert({
+            user_email: profile?.email,
+            provider: 'outlook',
+            access_token: account.access_token,
+            refresh_token: account.refresh_token,
+            expires_at: new Date(account.expires_at! * 1000).toISOString(),
+            fetch_since: new Date().toISOString()
+          }, {
+            onConflict: 'user_email,provider'
+          })
+          if (error) {
+            logger.error(`Supabase upsert error: ${error.message}`)
+            return false
+          }
+          logger.info(`Outlook account saved for ${profile?.email}`)
+        }
+
         return true
       } catch (err: any) {
         logger.error(`signIn error: ${err.message}`)
@@ -49,6 +76,8 @@ const handler = NextAuth({
       }
     },
     async redirect({ url, baseUrl }) {
+      if (url.startsWith(baseUrl)) return url
+      if (url === '/') return `${baseUrl}/`
       return `${baseUrl}/onboarding`
     },
     async session({ session }) {

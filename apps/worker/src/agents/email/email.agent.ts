@@ -67,6 +67,7 @@ export const emailAgent = {
 
           await supabase.from('emails').insert({
             gmail_id: email.id,
+            account_email: account.user_email,
             contact_id: contactId,
             subject: processed.subject,
             body: processed.body,

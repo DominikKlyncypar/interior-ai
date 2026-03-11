@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { getSupabase } from '@/lib/supabase'
+import { useAccount } from '@/context/AccountContext'
 
 interface Email {
   id: string
@@ -34,17 +35,20 @@ export default function EmailQueue() {
   const [emails, setEmails] = useState<Email[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<Email | null>(null)
+  const { activeAccount } = useAccount()
 
   useEffect(() => {
-    fetchEmails()
-  }, [])
+    if (activeAccount) fetchEmails()
+  }, [activeAccount])
 
   const fetchEmails = async () => {
+    setLoading(true)
     const supabase = getSupabase()
     const { data, error } = await supabase
       .from('emails')
       .select('*, contacts(email)')
       .eq('status', 'pending_review')
+      .eq('account_email', activeAccount)
       .order('received_at', { ascending: false })
 
     if (error) console.error(error)

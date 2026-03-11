@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
 import { Cormorant_Garamond, DM_Mono, Manrope } from 'next/font/google'
 import './globals.css'
+import Providers from '@/components/Providers'
 
 const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
-  weight: ['300', '400', '600'],
-  style: ['normal', 'italic'],
+  weight: ['300', '400', '500', '600'],
   variable: '--font-cormorant'
 })
 
@@ -23,7 +23,7 @@ const manrope = Manrope({
 
 export const metadata: Metadata = {
   title: 'Interior AI',
-  description: 'AI Operating System for Interior Design'
+  description: 'AI Operating System for Interior Design Firms',
 }
 
 export default function RootLayout({
@@ -34,7 +34,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${cormorant.variable} ${dmMono.variable} ${manrope.variable}`}>
-        {children}
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   )

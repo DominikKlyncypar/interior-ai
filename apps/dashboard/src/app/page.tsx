@@ -1,7 +1,11 @@
 'use client'
-import { signIn } from 'next-auth/react'
+import { signIn, useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 
 export default function HomePage() {
+  const { data: session } = useSession()
+  const router = useRouter()
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -19,37 +23,68 @@ export default function HomePage() {
         padding: '32px 60px',
         borderBottom: '1px solid rgba(255,255,255,0.06)'
       }}>
-        <div>
-          <div style={{
-            fontFamily: 'var(--font-dm-mono)',
-            fontSize: '10px',
-            letterSpacing: '3px',
-            color: 'var(--gold)',
-            textTransform: 'uppercase'
-          }}>
-            Interior AI
-          </div>
+        <div style={{
+          fontFamily: 'var(--font-dm-mono)',
+          fontSize: '10px',
+          letterSpacing: '3px',
+          color: 'var(--gold)',
+          textTransform: 'uppercase'
+        }}>
+          Interior AI
         </div>
-        <button
-          onClick={() => signIn('google', { callbackUrl: '/onboarding' })}
-          style={{
-            padding: '10px 24px',
-            background: 'transparent',
-            border: '1px solid rgba(255,255,255,0.15)',
-            color: 'var(--cream)',
-            fontFamily: 'var(--font-dm-mono)',
-            fontSize: '10px',
-            letterSpacing: '2px',
-            textTransform: 'uppercase',
-            cursor: 'pointer',
-            borderRadius: '2px',
-            transition: 'all 0.15s ease'
-          }}
-          onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--gold)')}
-          onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)')}
-        >
-          Sign In
-        </button>
+
+        {session && (
+          <div
+            onClick={() => router.push('/dashboard')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '8px 16px',
+              border: '1px solid rgba(255,255,255,0.15)',
+              borderRadius: '2px',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--gold)')}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)')}
+          >
+            <div style={{
+              width: '28px',
+              height: '28px',
+              borderRadius: '50%',
+              background: 'var(--gold)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--charcoal)',
+              fontFamily: 'var(--font-dm-mono)',
+              fontSize: '11px',
+              fontWeight: 600,
+              flexShrink: 0
+            }}>
+              {session.user?.name?.charAt(0).toUpperCase() || '?'}
+            </div>
+            <div>
+              <div style={{
+                fontFamily: 'var(--font-dm-mono)',
+                fontSize: '10px',
+                letterSpacing: '1px',
+                color: 'var(--cream)',
+              }}>
+                {session.user?.name?.split(' ')[0]}
+              </div>
+              <div style={{
+                fontFamily: 'var(--font-dm-mono)',
+                fontSize: '9px',
+                color: 'var(--mid)',
+                letterSpacing: '1px'
+              }}>
+                Go to dashboard →
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Hero */}
@@ -59,7 +94,7 @@ export default function HomePage() {
         margin: '0 auto',
         position: 'relative'
       }}>
-        {/* Decorative circle */}
+        {/* Decorative circles */}
         <div style={{
           position: 'absolute',
           top: '60px',
@@ -112,31 +147,53 @@ export default function HomePage() {
           lineHeight: 1.8,
           marginBottom: '48px'
         }}>
-          A fleet of AI agents that finds leads, manages your inbox, 
-          tracks finances, and keeps your firm visible — 
+          A fleet of AI agents that finds leads, manages your inbox,
+          tracks finances, and keeps your firm visible —
           so your team can focus on design.
         </p>
 
-        <button
-          onClick={() => signIn('google', { callbackUrl: '/onboarding' })}
-          style={{
-            padding: '16px 40px',
-            background: 'var(--gold)',
-            color: 'var(--charcoal)',
-            border: 'none',
-            fontFamily: 'var(--font-dm-mono)',
-            fontSize: '11px',
-            letterSpacing: '3px',
-            textTransform: 'uppercase',
-            cursor: 'pointer',
-            borderRadius: '2px',
-            transition: 'all 0.15s ease'
-          }}
-          onMouseEnter={e => (e.currentTarget.style.background = 'var(--gold-light)')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'var(--gold)')}
-        >
-          Get Started — Sign in with Google
-        </button>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => signIn('google', { callbackUrl: '/onboarding' })}
+            style={{
+              padding: '16px 40px',
+              background: 'var(--gold)',
+              color: 'var(--charcoal)',
+              border: 'none',
+              fontFamily: 'var(--font-dm-mono)',
+              fontSize: '11px',
+              letterSpacing: '3px',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              borderRadius: '2px',
+              transition: 'all 0.15s ease'
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--gold-light)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'var(--gold)')}
+          >
+            Sign in with Gmail
+          </button>
+          <button
+            onClick={() => signIn('azure-ad', { callbackUrl: '/onboarding' })}
+            style={{
+              padding: '16px 40px',
+              background: 'transparent',
+              color: 'var(--cream)',
+              border: '1px solid rgba(255,255,255,0.3)',
+              fontFamily: 'var(--font-dm-mono)',
+              fontSize: '11px',
+              letterSpacing: '3px',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              borderRadius: '2px',
+              transition: 'all 0.15s ease'
+            }}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--gold)')}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)')}
+          >
+            Sign in with Outlook
+          </button>
+        </div>
 
         <div style={{
           marginTop: '16px',
@@ -162,7 +219,7 @@ export default function HomePage() {
         {[
           { value: '8', label: 'AI Agents' },
           { value: '24/7', label: 'Always Running' },
-          { value: '10 min', label: 'Check Interval' },
+          { value: '10min', label: 'Check Interval' },
         ].map((stat) => (
           <div key={stat.label} style={{
             padding: '40px 48px',
@@ -229,7 +286,7 @@ export default function HomePage() {
             {
               icon: '✉️',
               title: 'Email & Communications',
-              desc: 'Reads, categorizes, and drafts replies in your firm\'s voice. Your inbox handled before you sit down in the morning.'
+              desc: "Reads, categorizes, and drafts replies in your firm's voice. Your inbox handled before you sit down in the morning."
             },
             {
               icon: '🤝',
@@ -305,8 +362,8 @@ export default function HomePage() {
             {[
               {
                 step: '01',
-                title: 'Connect your Gmail',
-                desc: 'Sign in with Google and grant access. Takes 30 seconds. Your credentials are encrypted and never shared.'
+                title: 'Connect your email',
+                desc: 'Sign in with Gmail or Outlook and grant access. Takes 30 seconds. Your credentials are encrypted and never shared.'
               },
               {
                 step: '02',
@@ -370,23 +427,48 @@ export default function HomePage() {
         }}>
           Ready to run your firm on <em style={{ color: 'var(--gold-light)', fontStyle: 'italic' }}>intelligence?</em>
         </h2>
-        <button
-          onClick={() => signIn('google', { callbackUrl: '/onboarding' })}
-          style={{
-            padding: '16px 48px',
-            background: 'var(--gold)',
-            color: 'var(--charcoal)',
-            border: 'none',
-            fontFamily: 'var(--font-dm-mono)',
-            fontSize: '11px',
-            letterSpacing: '3px',
-            textTransform: 'uppercase',
-            cursor: 'pointer',
-            borderRadius: '2px',
-          }}
-        >
-          Get Started Free
-        </button>
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => signIn('google', { callbackUrl: '/onboarding' })}
+            style={{
+              padding: '16px 48px',
+              background: 'var(--gold)',
+              color: 'var(--charcoal)',
+              border: 'none',
+              fontFamily: 'var(--font-dm-mono)',
+              fontSize: '11px',
+              letterSpacing: '3px',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              borderRadius: '2px',
+              transition: 'all 0.15s ease'
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--gold-light)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'var(--gold)')}
+          >
+            Get Started with Gmail
+          </button>
+          <button
+            onClick={() => signIn('azure-ad', { callbackUrl: '/onboarding' })}
+            style={{
+              padding: '16px 48px',
+              background: 'transparent',
+              color: 'var(--cream)',
+              border: '1px solid rgba(255,255,255,0.3)',
+              fontFamily: 'var(--font-dm-mono)',
+              fontSize: '11px',
+              letterSpacing: '3px',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              borderRadius: '2px',
+              transition: 'all 0.15s ease'
+            }}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--gold)')}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)')}
+          >
+            Get Started with Outlook
+          </button>
+        </div>
       </div>
 
       {/* Footer */}
