@@ -13,19 +13,34 @@ export default function OnboardingPage() {
   const router = useRouter()
   const [selected, setSelected] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleContinue = async () => {
     if (selected === null) return
     setLoading(true)
+    setError(null)
 
     const fetchSince = new Date()
     fetchSince.setDate(fetchSince.getDate() - selected)
+    // Force UTC midnight to avoid timezone issues
+    const fetchSinceUTC = new Date(Date.UTC(
+      fetchSince.getFullYear(),
+      fetchSince.getMonth(),
+      fetchSince.getDate()
+    ))
 
-    await fetch('/api/onboarding/set-fetch-since', {
+    const response = await fetch('/api/onboarding/set-fetch-since', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fetchSince: fetchSince.toISOString() })
+      body: JSON.stringify({ fetchSince: fetchSinceUTC.toISOString() })
     })
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({ error: 'Failed to save onboarding selection' }))
+      setError(body.error || 'Failed to save onboarding selection')
+      setLoading(false)
+      return
+    }
 
     router.push('/dashboard')
   }
@@ -147,6 +162,18 @@ export default function OnboardingPage() {
         >
           {loading ? 'Setting up...' : 'Continue'}
         </button>
+
+        {error && (
+          <div style={{
+            marginTop: '12px',
+            fontFamily: 'var(--font-dm-mono)',
+            fontSize: '10px',
+            letterSpacing: '0.5px',
+            color: '#8B4A4A'
+          }}>
+            {error}
+          </div>
+        )}
 
       </div>
     </div>

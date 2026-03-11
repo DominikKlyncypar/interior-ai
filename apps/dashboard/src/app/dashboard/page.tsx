@@ -1,26 +1,42 @@
-export const dynamic = 'force-dynamic'
-
+'use client'
+import { useEffect, useState } from 'react'
 import Sidebar from '@/components/Sidebar'
 import { getSupabase } from '@/lib/supabase'
+import { useAccount } from '@/context/AccountContext'
 
-export default async function Home() {
-  const supabase = getSupabase()
+export default function Home() {
+  const { activeAccount } = useAccount()
+  const [emailCount, setEmailCount] = useState<number>(0)
+  const [leadCount, setLeadCount] = useState<number>(0)
 
-  const { count: emailCount } = await supabase
-    .from('emails')
-    .select('*', { count: 'exact', head: true })
-    .eq('status', 'pending_review')
+  useEffect(() => {
+    if (!activeAccount) return
+    const fetchCounts = async () => {
+      const supabase = getSupabase()
 
-  const { count: leadCount } = await supabase
-    .from('leads')
-    .select('*', { count: 'exact', head: true })
-    .eq('status', 'new')
+      const { count: emails } = await supabase
+        .from('emails')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending_review')
+        .eq('account_email', activeAccount)
+
+      const { count: leads } = await supabase
+        .from('leads')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'new')
+        .eq('account_email', activeAccount)
+
+      setEmailCount(emails ?? 0)
+      setLeadCount(leads ?? 0)
+    }
+    fetchCounts()
+  }, [activeAccount])
 
   return (
     <div style={{ display: 'flex' }}>
       <Sidebar />
       <main style={{ marginLeft: '220px', flex: 1, padding: '48px', minHeight: '100vh' }}>
-        
+
         {/* Header */}
         <div style={{ marginBottom: '48px' }}>
           <div style={{
@@ -55,8 +71,8 @@ export default async function Home() {
           marginBottom: '48px'
         }}>
           {[
-            { label: 'Emails to Review', value: emailCount ?? 0, color: 'var(--gold)' },
-            { label: 'New Leads', value: leadCount ?? 0, color: 'var(--teal)' },
+            { label: 'Emails to Review', value: emailCount, color: 'var(--gold)' },
+            { label: 'New Leads', value: leadCount, color: 'var(--teal)' },
             { label: 'Active Projects', value: '—', color: 'var(--charcoal)' },
             { label: 'Agents Running', value: '2', color: 'var(--charcoal)' },
           ].map((stat) => (

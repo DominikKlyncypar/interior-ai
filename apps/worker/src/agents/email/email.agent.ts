@@ -1,5 +1,6 @@
 import { getSupabase } from '../../lib/supabase'
 import { fetchUnreadEmails } from './email.fetcher'
+import { fetchUnreadOutlookEmails } from './outlook.fetcher'
 import { processEmail } from './email.processor'
 import { ConnectedAccount } from './email.types'
 import logger from '../../lib/logger'
@@ -12,31 +13,34 @@ export const emailAgent = {
     const { data: accounts, error } = await supabase
       .from('connected_accounts')
       .select('*')
-      .eq('provider', 'gmail')
+      .in('provider', ['gmail', 'outlook'])
 
     if (error) throw new Error(`Failed to fetch accounts: ${error.message}`)
     if (!accounts || accounts.length === 0) {
-      logger.info('No connected Gmail accounts found')
+      logger.info('No connected Gmail or Outlook accounts found')
       return
     }
 
     logger.info(`Found ${accounts.length} connected account(s)`)
 
     for (const account of accounts as ConnectedAccount[]) {
-      logger.info(`Processing emails for ${account.user_email}`)
+      logger.info(`Processing emails for ${account.user_email} (${account.provider})`)
 
       await supabase.from('agent_logs').insert({
         agent: 'email',
         status: 'started',
         summary: `Processing emails for ${account.user_email}`
       })
+
       try {
-        const emails = await fetchUnreadEmails(account)
+        const emails = account.provider === 'outlook'
+          ? await fetchUnreadOutlookEmails(account)
+          : await fetchUnreadEmails(account)
+
         logger.info(`Found ${emails.length} unread emails`)
 
         for (const email of emails) {
-          const processed = await processEmail(email)
-          
+          // Check if already processed
           const { data: existing } = await supabase
             .from('emails')
             .select('id')
@@ -47,6 +51,10 @@ export const emailAgent = {
             logger.info(`Skipping already processed email: ${email.id}`)
             continue
           }
+
+          const processed = await processEmail(email)
+
+          // Find or create contact
           let contactId = null
           const { data: existingContact } = await supabase
             .from('contacts')
@@ -78,6 +86,7 @@ export const emailAgent = {
             status: 'pending_review',
             received_at: processed.receivedAt
           })
+
           logger.info(`Processed: ${processed.subject} [${processed.category}]`)
         }
 
