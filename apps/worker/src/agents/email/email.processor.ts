@@ -1,9 +1,14 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { RawEmail, ProcessedEmail } from './email.types'
+import { AccountBranding, getEmailVoiceGuidelines } from '../../lib/email-brand'
 
 const client = new Anthropic()
 
-export const processEmail = async (email: RawEmail): Promise<ProcessedEmail> => {
+export const processEmail = async (
+  email: RawEmail,
+  branding?: AccountBranding | null
+): Promise<ProcessedEmail> => {
+  const voiceGuidelines = getEmailVoiceGuidelines(branding)
   const attachmentSummary = email.attachments.length > 0
     ? email.attachments
         .map(attachment => {
@@ -27,7 +32,8 @@ Your job is to read this email and respond with a JSON object containing:
 4. draftReply: a helpful, professional reply in our voice - warm, concise, never salesy.
    - For admin/notification emails, draft a brief acknowledgment
    - For leads, draft an enthusiastic but professional response
-   - Sign off as "The Team"
+   - Match this voice guidance: ${voiceGuidelines}
+   - Do not include any signature, sign-off block, sender name, phone number, or contact details. The system appends the signature automatically.
 
 Email:
 Subject: ${email.subject}

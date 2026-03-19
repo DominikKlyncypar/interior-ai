@@ -86,11 +86,11 @@ export default function EmailQueue() {
     }
   }
 
-  const openAttachment = async (attachmentId: string) => {
+  const openAttachment = async (attachmentId: string, action: 'open' | 'download' = 'open') => {
     const response = await fetch('/api/emails/attachments/url', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ attachmentId })
+      body: JSON.stringify({ attachmentId, action })
     })
 
     if (!response.ok) {
@@ -100,6 +100,17 @@ export default function EmailQueue() {
     }
 
     const body = await response.json()
+
+    if (action === 'download') {
+      const link = document.createElement('a')
+      link.href = body.url
+      link.rel = 'noopener noreferrer'
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      return
+    }
+
     window.open(body.url, '_blank', 'noopener,noreferrer')
   }
 
@@ -319,24 +330,44 @@ const updateStatus = async (id: string, status: string) => {
                         </div>
                       )}
                     </div>
-                    <button
-                      onClick={() => openAttachment(attachment.id)}
-                      disabled={attachment.status === 'skipped_too_large' || attachment.status === 'unsupported'}
-                      style={{
-                        padding: '8px 12px',
-                        background: attachment.status === 'skipped_too_large' || attachment.status === 'unsupported' ? 'var(--border)' : 'var(--charcoal)',
-                        color: attachment.status === 'skipped_too_large' || attachment.status === 'unsupported' ? 'var(--light)' : 'var(--cream)',
-                        border: 'none',
-                        borderRadius: '2px',
-                        fontFamily: 'var(--font-dm-mono)',
-                        fontSize: '9px',
-                        letterSpacing: '1px',
-                        textTransform: 'uppercase',
-                        cursor: attachment.status === 'skipped_too_large' || attachment.status === 'unsupported' ? 'not-allowed' : 'pointer'
-                      }}
-                    >
-                      Open
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        onClick={() => openAttachment(attachment.id, 'open')}
+                        disabled={attachment.status === 'skipped_too_large' || attachment.status === 'unsupported'}
+                        style={{
+                          padding: '8px 12px',
+                          background: attachment.status === 'skipped_too_large' || attachment.status === 'unsupported' ? 'var(--border)' : 'var(--charcoal)',
+                          color: attachment.status === 'skipped_too_large' || attachment.status === 'unsupported' ? 'var(--light)' : 'var(--cream)',
+                          border: 'none',
+                          borderRadius: '2px',
+                          fontFamily: 'var(--font-dm-mono)',
+                          fontSize: '9px',
+                          letterSpacing: '1px',
+                          textTransform: 'uppercase',
+                          cursor: attachment.status === 'skipped_too_large' || attachment.status === 'unsupported' ? 'not-allowed' : 'pointer'
+                        }}
+                      >
+                        Open
+                      </button>
+                      <button
+                        onClick={() => openAttachment(attachment.id, 'download')}
+                        disabled={attachment.status === 'skipped_too_large' || attachment.status === 'unsupported'}
+                        style={{
+                          padding: '8px 12px',
+                          background: 'transparent',
+                          color: attachment.status === 'skipped_too_large' || attachment.status === 'unsupported' ? 'var(--light)' : 'var(--charcoal)',
+                          border: '1px solid var(--border)',
+                          borderRadius: '2px',
+                          fontFamily: 'var(--font-dm-mono)',
+                          fontSize: '9px',
+                          letterSpacing: '1px',
+                          textTransform: 'uppercase',
+                          cursor: attachment.status === 'skipped_too_large' || attachment.status === 'unsupported' ? 'not-allowed' : 'pointer'
+                        }}
+                      >
+                        Download
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

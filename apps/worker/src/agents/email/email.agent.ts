@@ -54,10 +54,16 @@ export const emailAgent = {
             continue
           }
 
-          const processed = await processEmail({
-            ...email,
-            attachments: await enrichAttachmentsWithExtractedText(email.attachments)
-          })
+          const processed = await processEmail(
+            {
+              ...email,
+              attachments: await enrichAttachmentsWithExtractedText(email.attachments)
+            },
+            {
+              email_signature_text: account.email_signature_text,
+              email_voice_guidelines: account.email_voice_guidelines
+            }
+          )
 
           // Find or create contact
           let contactId = null

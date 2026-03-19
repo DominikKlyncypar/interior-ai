@@ -51,4 +51,9 @@ export interface ConnectedAccount {
   refresh_token: string
   expires_at: string
   fetch_since: string
+  email_signature_html?: string | null
+  email_signature_text?: string | null
+  email_voice_guidelines?: string | null
+  logo_url?: string | null
+  signature_source?: string | null
 }

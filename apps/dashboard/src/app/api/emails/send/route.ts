@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabase } from '@/lib/supabase'
 import { google } from 'googleapis'
-import { replyToOutlookMessage } from '@/lib/outlook'
+import {
+  buildReplyHtml,
+  applyEmailSignatureText
+} from '@/lib/email-brand'
+import {
+  createOutlookReplyDraft,
+  sendOutlookDraft,
+  updateOutlookMessageBody
+} from '@/lib/outlook'
 
 export async function POST(req: NextRequest) {
   try {
@@ -30,8 +38,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No connected account' }, { status: 404 })
     }
 
+    const branding = {
+      email_signature_html: account.email_signature_html,
+      email_signature_text: account.email_signature_text,
+      email_voice_guidelines: account.email_voice_guidelines,
+      logo_url: account.logo_url
+    }
+    const finalReplyText = applyEmailSignatureText(draftReply || '', branding)
+    const finalReplyHtml = buildReplyHtml(draftReply || '', branding)
+
     if (account.provider === 'outlook') {
-      await replyToOutlookMessage(account, email.gmail_id, draftReply)
+      const draft = await createOutlookReplyDraft(account, email.gmail_id)
+      await updateOutlookMessageBody(account, draft.id, finalReplyHtml)
+      await sendOutlookDraft(account, draft.id)
     } else {
       const oauth2Client = new google.auth.OAuth2(
         process.env.GOOGLE_CLIENT_ID,
@@ -50,9 +69,20 @@ export async function POST(req: NextRequest) {
       const message = [
         `To: ${toEmail}`,
         `Subject: ${subject}`,
+        'MIME-Version: 1.0',
+        'Content-Type: multipart/alternative; boundary="reply-boundary"',
+        '',
+        '--reply-boundary',
         'Content-Type: text/plain; charset=utf-8',
         '',
-        draftReply
+        finalReplyText,
+        '',
+        '--reply-boundary',
+        'Content-Type: text/html; charset=utf-8',
+        '',
+        finalReplyHtml,
+        '',
+        '--reply-boundary--'
       ].join('\n')
 
       const encodedMessage = Buffer.from(message)

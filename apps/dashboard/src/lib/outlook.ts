@@ -204,3 +204,70 @@ export const replyToOutlookMessage = async (
     throw new Error(`Outlook reply failed: ${await buildGraphError(response)}`)
   }
 }
+
+export const createOutlookReplyDraft = async (
+  account: ConnectedAccount,
+  messageId: string
+) => {
+  const response = await graphFetchWithRetry(
+    account,
+    `https://graph.microsoft.com/v1.0/me/messages/${messageId}/createReply`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({})
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error(`Outlook create reply draft failed: ${await buildGraphError(response)}`)
+  }
+
+  return await response.json()
+}
+
+export const updateOutlookMessageBody = async (
+  account: ConnectedAccount,
+  messageId: string,
+  html: string
+) => {
+  const response = await graphFetchWithRetry(
+    account,
+    `https://graph.microsoft.com/v1.0/me/messages/${messageId}`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        body: {
+          contentType: 'html',
+          content: html
+        }
+      })
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error(`Outlook draft update failed: ${await buildGraphError(response)}`)
+  }
+}
+
+export const sendOutlookDraft = async (
+  account: ConnectedAccount,
+  messageId: string
+) => {
+  const response = await graphFetchWithRetry(
+    account,
+    `https://graph.microsoft.com/v1.0/me/messages/${messageId}/send`,
+    {
+      method: 'POST'
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error(`Outlook draft send failed: ${await buildGraphError(response)}`)
+  }
+}
