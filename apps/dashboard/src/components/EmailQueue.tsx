@@ -7,6 +7,13 @@ interface Email {
   id: string
   subject: string
   body: string
+  body_text?: string
+  body_html?: string
+  snippet?: string
+  from_email?: string
+  from_name?: string
+  has_attachments?: boolean
+  attachment_count?: number
   category: string
   urgency: string
   summary: string
@@ -14,6 +21,16 @@ interface Email {
   status: string
   received_at: string
   contacts?: { email: string }
+  email_attachments?: Attachment[]
+}
+
+interface Attachment {
+  id: string
+  filename: string
+  mime_type: string
+  size_bytes: number
+  status: string
+  extracted_text?: string
 }
 
 const urgencyColor: Record<string, string> = {
@@ -46,7 +63,7 @@ export default function EmailQueue() {
     const supabase = getSupabase()
     const { data, error } = await supabase
       .from('emails')
-      .select('*, contacts(email)')
+      .select('*, contacts(email), email_attachments(*)')
       .eq('status', 'pending_review')
       .eq('account_email', activeAccount)
       .order('received_at', { ascending: false })
@@ -54,6 +71,36 @@ export default function EmailQueue() {
     if (error) console.error(error)
     else setEmails(data || [])
     setLoading(false)
+  }
+
+  const markEmailAsRead = async (id: string) => {
+    const response = await fetch('/api/emails/mark-read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ emailId: id })
+    })
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ error: 'Mark read failed' }))
+      throw new Error(err.error || 'Mark read failed')
+    }
+  }
+
+  const openAttachment = async (attachmentId: string) => {
+    const response = await fetch('/api/emails/attachments/url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ attachmentId })
+    })
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ error: 'Attachment open failed' }))
+      console.error('Attachment open failed:', err)
+      return
+    }
+
+    const body = await response.json()
+    window.open(body.url, '_blank', 'noopener,noreferrer')
   }
 
 const updateStatus = async (id: string, status: string) => {
@@ -75,20 +122,20 @@ const updateStatus = async (id: string, status: string) => {
           console.error('Send failed:', err)
           return
         }
-    await fetch('/api/emails/mark-read', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ emailId: id })
-    })
+    try {
+      await markEmailAsRead(id)
+    } catch (err) {
+      console.error('Mark read failed:', err)
+    }
   } else {
       await supabase.from('emails').update({ status }).eq('id', id)
 
       if (status === 'dismissed') {
-          await fetch('/api/emails/mark-read', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ emailId: id })
-          })
+          try {
+            await markEmailAsRead(id)
+          } catch (err) {
+            console.error('Mark read failed:', err)
+          }
       }
   }
 
@@ -209,9 +256,92 @@ const updateStatus = async (id: string, status: string) => {
               background: 'var(--cream)',
               borderRadius: '2px'
             }}>
-              {selected.body}
+              {selected.body_text || selected.body}
             </div>
           </div>
+
+          {!!selected.email_attachments?.length && (
+            <div style={{ marginBottom: '24px' }}>
+              <div style={{
+                fontFamily: 'var(--font-dm-mono)',
+                fontSize: '9px',
+                letterSpacing: '2px',
+                color: 'var(--gold)',
+                textTransform: 'uppercase',
+                marginBottom: '8px'
+              }}>
+                Attachments
+              </div>
+              <div style={{
+                display: 'grid',
+                gap: '8px'
+              }}>
+                {selected.email_attachments.map((attachment) => (
+                  <div
+                    key={attachment.id}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '12px 14px',
+                      background: 'var(--cream)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '2px'
+                    }}
+                  >
+                    <div>
+                      <div style={{
+                        fontSize: '13px',
+                        color: 'var(--slate)',
+                        marginBottom: '2px'
+                      }}>
+                        {attachment.filename}
+                      </div>
+                      <div style={{
+                        fontFamily: 'var(--font-dm-mono)',
+                        fontSize: '9px',
+                        color: 'var(--mid)',
+                        letterSpacing: '1px',
+                        textTransform: 'uppercase'
+                      }}>
+                        {attachment.mime_type} | {formatBytes(attachment.size_bytes)} | {attachment.status}
+                      </div>
+                      {attachment.extracted_text && (
+                        <div style={{
+                          marginTop: '8px',
+                          fontSize: '12px',
+                          lineHeight: 1.6,
+                          color: 'var(--mid)',
+                          maxWidth: '480px'
+                        }}>
+                          {attachment.extracted_text.slice(0, 220)}
+                          {attachment.extracted_text.length > 220 ? '...' : ''}
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => openAttachment(attachment.id)}
+                      disabled={attachment.status === 'skipped_too_large' || attachment.status === 'unsupported'}
+                      style={{
+                        padding: '8px 12px',
+                        background: attachment.status === 'skipped_too_large' || attachment.status === 'unsupported' ? 'var(--border)' : 'var(--charcoal)',
+                        color: attachment.status === 'skipped_too_large' || attachment.status === 'unsupported' ? 'var(--light)' : 'var(--cream)',
+                        border: 'none',
+                        borderRadius: '2px',
+                        fontFamily: 'var(--font-dm-mono)',
+                        fontSize: '9px',
+                        letterSpacing: '1px',
+                        textTransform: 'uppercase',
+                        cursor: attachment.status === 'skipped_too_large' || attachment.status === 'unsupported' ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      Open
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Draft Reply */}
           <div style={{ marginBottom: '24px' }}>
@@ -287,4 +417,11 @@ const updateStatus = async (id: string, status: string) => {
       )}
     </div>
   )
+}
+
+const formatBytes = (value: number) => {
+  if (!value) return '0 B'
+  if (value < 1024) return `${value} B`
+  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`
+  return `${(value / (1024 * 1024)).toFixed(1)} MB`
 }

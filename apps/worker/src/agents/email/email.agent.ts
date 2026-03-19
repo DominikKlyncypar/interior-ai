@@ -4,6 +4,8 @@ import { fetchUnreadOutlookEmails } from './outlook.fetcher'
 import { processEmail } from './email.processor'
 import { ConnectedAccount } from './email.types'
 import logger from '../../lib/logger'
+import { storeEmailAttachments } from './email.attachments'
+import { enrichAttachmentsWithExtractedText } from './email.extract'
 
 export const emailAgent = {
   run: async () => {
@@ -52,14 +54,18 @@ export const emailAgent = {
             continue
           }
 
-          const processed = await processEmail(email)
+          const processed = await processEmail({
+            ...email,
+            attachments: await enrichAttachmentsWithExtractedText(email.attachments)
+          })
 
           // Find or create contact
           let contactId = null
+          const contactEmail = processed.fromEmail || processed.from
           const { data: existingContact } = await supabase
             .from('contacts')
             .select('id')
-            .eq('email', processed.from)
+            .eq('email', contactEmail)
             .single()
 
           if (existingContact) {
@@ -67,25 +73,46 @@ export const emailAgent = {
           } else {
             const { data: newContact } = await supabase
               .from('contacts')
-              .insert({ email: processed.from, type: 'lead', source: 'email' })
+              .insert({ email: contactEmail, type: 'lead', source: 'email' })
               .select('id')
               .single()
             contactId = newContact?.id
           }
 
-          await supabase.from('emails').insert({
+          const { data: insertedEmail, error: insertError } = await supabase.from('emails').insert({
             gmail_id: email.id,
+            provider: account.provider,
+            provider_message_id: email.id,
             account_email: account.user_email,
             contact_id: contactId,
             subject: processed.subject,
-            body: processed.body,
+            body: processed.bodyText,
+            body_text: processed.bodyText,
+            body_html: processed.bodyHtml,
+            snippet: processed.snippet,
+            from_name: processed.fromName,
+            from_email: processed.fromEmail,
+            has_attachments: processed.attachments.length > 0,
+            attachment_count: processed.attachments.length,
             category: processed.category,
             urgency: processed.urgency,
             summary: processed.summary,
             draft_reply: processed.draftReply,
             status: 'pending_review',
             received_at: processed.receivedAt
-          })
+          }).select('id').single()
+
+          if (insertError || !insertedEmail) {
+            throw new Error(`Failed to insert processed email: ${insertError?.message || 'unknown error'}`)
+          }
+
+          await storeEmailAttachments(
+            supabase,
+            insertedEmail.id,
+            account.user_email,
+            email.id,
+            processed.attachments
+          )
 
           logger.info(`Processed: ${processed.subject} [${processed.category}]`)
         }

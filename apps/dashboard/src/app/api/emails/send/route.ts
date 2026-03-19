@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabase } from '@/lib/supabase'
 import { google } from 'googleapis'
+import { replyToOutlookMessage } from '@/lib/outlook'
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,57 +20,56 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email not found' }, { status: 404 })
     }
 
-    // Get connected account
     const { data: account, error: accountError } = await supabase
       .from('connected_accounts')
       .select('*')
-      .eq('provider', 'gmail')
+      .eq('user_email', email.account_email)
       .single()
 
     if (accountError || !account) {
       return NextResponse.json({ error: 'No connected account' }, { status: 404 })
     }
 
-    // Set up Gmail client
-    const oauth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET
-    )
+    if (account.provider === 'outlook') {
+      await replyToOutlookMessage(account, email.gmail_id, draftReply)
+    } else {
+      const oauth2Client = new google.auth.OAuth2(
+        process.env.GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_SECRET
+      )
 
-    oauth2Client.setCredentials({
-      access_token: account.access_token,
-      refresh_token: account.refresh_token
-    })
+      oauth2Client.setCredentials({
+        access_token: account.access_token,
+        refresh_token: account.refresh_token
+      })
 
-    const gmail = google.gmail({ version: 'v1', auth: oauth2Client })
+      const gmail = google.gmail({ version: 'v1', auth: oauth2Client })
 
-    // Encode the email
-    const toEmail = email.contacts?.email || ''
-    const subject = `Re: ${email.subject}`
-    const message = [
-      `To: ${toEmail}`,
-      `Subject: ${subject}`,
-      'Content-Type: text/plain; charset=utf-8',
-      '',
-      draftReply
-    ].join('\n')
+      const toEmail = email.contacts?.email || ''
+      const subject = `Re: ${email.subject}`
+      const message = [
+        `To: ${toEmail}`,
+        `Subject: ${subject}`,
+        'Content-Type: text/plain; charset=utf-8',
+        '',
+        draftReply
+      ].join('\n')
 
-    const encodedMessage = Buffer.from(message)
-      .toString('base64')
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '')
+      const encodedMessage = Buffer.from(message)
+        .toString('base64')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '')
 
-    // Send the email
-    await gmail.users.messages.send({
-      userId: 'me',
-      requestBody: {
-        raw: encodedMessage,
-        threadId: email.gmail_id
-      }
-    })
+      await gmail.users.messages.send({
+        userId: 'me',
+        requestBody: {
+          raw: encodedMessage,
+          threadId: email.gmail_id
+        }
+      })
+    }
 
-    // Update status to sent
     await supabase
       .from('emails')
       .update({ status: 'sent' })

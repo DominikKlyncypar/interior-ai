@@ -4,7 +4,18 @@ import { RawEmail, ProcessedEmail } from './email.types'
 const client = new Anthropic()
 
 export const processEmail = async (email: RawEmail): Promise<ProcessedEmail> => {
-  const prompt = `You are the email assistant for an interior design firm that specializes in commercial projects — office, hospitality, and medical spaces.
+  const attachmentSummary = email.attachments.length > 0
+    ? email.attachments
+        .map(attachment => {
+          const extracted = attachment.extractedText
+            ? `\nExtracted text:\n${attachment.extractedText.slice(0, 3000)}`
+            : ''
+          return `${attachment.filename} (${attachment.mimeType}, ${attachment.sizeBytes} bytes, ${attachment.status || 'stored'})${extracted}`
+        })
+        .join('\n')
+    : 'None'
+
+  const prompt = `You are the email assistant for an interior design firm that specializes in commercial projects - office, hospitality, and medical spaces.
 
 Your job is to read this email and respond with a JSON object containing:
 1. category: one of "new_lead", "existing_client", "vendor", "urgent", "admin", "spam"
@@ -13,7 +24,7 @@ Your job is to read this email and respond with a JSON object containing:
    - Anything that could be a business opportunity should be "new_lead"
 2. urgency: one of "high", "medium", "low"
 3. summary: one sentence describing what this email is about
-4. draftReply: a helpful, professional reply in our voice — warm, concise, never salesy. 
+4. draftReply: a helpful, professional reply in our voice - warm, concise, never salesy.
    - For admin/notification emails, draft a brief acknowledgment
    - For leads, draft an enthusiastic but professional response
    - Sign off as "The Team"
@@ -21,7 +32,11 @@ Your job is to read this email and respond with a JSON object containing:
 Email:
 Subject: ${email.subject}
 From: ${email.from}
-Body: ${email.body}
+Body:
+${email.bodyText || email.body}
+
+Attachments:
+${attachmentSummary}
 
 Respond ONLY with a valid JSON object, no markdown, no explanation.`
 
