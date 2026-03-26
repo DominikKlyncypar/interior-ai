@@ -101,8 +101,9 @@ const refreshOutlookToken = async (account: ConnectedAccount) => {
       const token = await refreshOutlookTokenForTenant(account, tenant)
       await persistRefreshedToken(account, token)
       return token.access_token
-    } catch (err: any) {
-      errors.push(`[${tenant}] ${err.message}`)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unknown error'
+      errors.push(`[${tenant}] ${message}`)
     }
   }
 
@@ -252,6 +253,40 @@ export const updateOutlookMessageBody = async (
 
   if (!response.ok) {
     throw new Error(`Outlook draft update failed: ${await buildGraphError(response)}`)
+  }
+}
+
+export const addOutlookInlineAttachment = async (
+  account: ConnectedAccount,
+  messageId: string,
+  attachment: {
+    filename: string
+    contentType: string
+    contentId: string
+    contentBytes: string
+  }
+) => {
+  const response = await graphFetchWithRetry(
+    account,
+    `https://graph.microsoft.com/v1.0/me/messages/${messageId}/attachments`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        '@odata.type': '#microsoft.graph.fileAttachment',
+        name: attachment.filename,
+        contentType: attachment.contentType,
+        contentBytes: attachment.contentBytes,
+        contentId: attachment.contentId,
+        isInline: true
+      })
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error(`Outlook inline attachment failed: ${await buildGraphError(response)}`)
   }
 }
 

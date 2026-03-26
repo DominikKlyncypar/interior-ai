@@ -5,6 +5,17 @@ export type AccountBranding = {
   logo_url?: string | null
 }
 
+export type SignatureImage = {
+  contentId: string
+  sourceUrl?: string | null
+}
+
+const DEFAULT_SIGNATURE_LOGO_STYLE =
+  'display:block; max-width:180px; max-height:64px; height:auto; width:auto;'
+
+const buildSignatureLogoHtml = (src: string) =>
+  `<div style="margin-bottom:12px;"><img src="${escapeHtml(src)}" alt="Logo" style="${DEFAULT_SIGNATURE_LOGO_STYLE}" /></div>`
+
 const DEFAULT_VOICE_GUIDELINES = [
   'Write like a thoughtful interior design studio, not a generic assistant.',
   'Sound warm, grounded, and specific.',
@@ -21,8 +32,28 @@ const escapeHtml = (value: string) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;')
 
-const replaceLogoPlaceholder = (html: string, logoUrl?: string | null) =>
-  logoUrl ? html.replace(/\{\{logo_url\}\}/g, logoUrl) : html
+const replaceLogoPlaceholder = (
+  html: string,
+  logoUrl?: string | null,
+  signatureImage?: SignatureImage | null
+) => {
+  if (signatureImage) {
+    const cidUrl = `cid:${signatureImage.contentId}`
+    let nextHtml = html.replace(/\{\{logo_url\}\}/g, cidUrl)
+
+    if (logoUrl) {
+      nextHtml = nextHtml.split(logoUrl).join(cidUrl)
+    }
+
+    if (signatureImage.sourceUrl) {
+      nextHtml = nextHtml.split(signatureImage.sourceUrl).join(cidUrl)
+    }
+
+    return nextHtml
+  }
+
+  return logoUrl ? html.replace(/\{\{logo_url\}\}/g, logoUrl) : html
+}
 
 export const getVoiceGuidelines = (branding?: AccountBranding | null) =>
   branding?.email_voice_guidelines?.trim() || DEFAULT_VOICE_GUIDELINES
@@ -43,13 +74,37 @@ const stripExistingSignature = (draftReply: string, branding?: AccountBranding |
   return trimmedReply
 }
 
-export const getSignatureHtml = (branding?: AccountBranding | null) => {
+export const getSignatureHtml = (
+  branding?: AccountBranding | null,
+  signatureImage?: SignatureImage | null
+) => {
   if (branding?.email_signature_html?.trim()) {
-    return replaceLogoPlaceholder(branding.email_signature_html.trim(), branding.logo_url)
+    const resolvedHtml = replaceLogoPlaceholder(
+      branding.email_signature_html.trim(),
+      branding.logo_url,
+      signatureImage
+    )
+
+    if (!/<img\b/i.test(resolvedHtml)) {
+      const logoSrc = signatureImage
+        ? `cid:${signatureImage.contentId}`
+        : branding.logo_url
+
+      if (logoSrc) {
+        return `${buildSignatureLogoHtml(logoSrc)}${resolvedHtml}`
+      }
+    }
+
+    return resolvedHtml
   }
 
   const signatureText = getSignatureText(branding)
-  return `<div>${escapeHtml(signatureText).replace(/\n/g, '<br />')}</div>`
+  const logoSrc = signatureImage
+    ? `cid:${signatureImage.contentId}`
+    : branding?.logo_url
+  const logoHtml = logoSrc ? buildSignatureLogoHtml(logoSrc) : ''
+
+  return `${logoHtml}<div>${escapeHtml(signatureText).replace(/\n/g, '<br />')}</div>`
 }
 
 export const applyEmailSignatureText = (draftReply: string, branding?: AccountBranding | null) => {
@@ -62,12 +117,16 @@ export const applyEmailSignatureText = (draftReply: string, branding?: AccountBr
   return `${trimmedReply}\n\n${signature}`
 }
 
-export const buildReplyHtml = (draftReply: string, branding?: AccountBranding | null) => {
+export const buildReplyHtml = (
+  draftReply: string,
+  branding?: AccountBranding | null,
+  signatureImage?: SignatureImage | null
+) => {
   const replyHtml = stripExistingSignature(draftReply, branding)
     .trim()
     .split(/\n{2,}/)
     .map(paragraph => `<p style="margin:0 0 12px;">${escapeHtml(paragraph).replace(/\n/g, '<br />')}</p>`)
     .join('')
 
-  return `${replyHtml}<div style="margin-top:20px;">${getSignatureHtml(branding)}</div>`
+  return `${replyHtml}<div style="margin-top:20px;">${getSignatureHtml(branding, signatureImage)}</div>`
 }

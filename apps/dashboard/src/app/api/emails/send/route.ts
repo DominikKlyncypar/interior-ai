@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabase } from '@/lib/supabase'
 import { google } from 'googleapis'
+import { buildReplyContent, buildGmailReplyMime, encodeGmailRawMessage } from '@/lib/email-compose'
 import {
-  buildReplyHtml,
-  applyEmailSignatureText
-} from '@/lib/email-brand'
+  extractSignatureImageSource,
+  fetchInlineAttachmentFromUrl
+} from '@/lib/email-inline-assets'
 import {
+  addOutlookInlineAttachment,
   createOutlookReplyDraft,
   sendOutlookDraft,
   updateOutlookMessageBody
@@ -44,12 +46,22 @@ export async function POST(req: NextRequest) {
       email_voice_guidelines: account.email_voice_guidelines,
       logo_url: account.logo_url
     }
-    const finalReplyText = applyEmailSignatureText(draftReply || '', branding)
-    const finalReplyHtml = buildReplyHtml(draftReply || '', branding)
+    const signatureImageSource =
+      extractSignatureImageSource(branding.email_signature_html) ||
+      (branding.email_signature_html?.includes('{{logo_url}}') ? branding.logo_url || null : null) ||
+      branding.logo_url ||
+      null
+    const inlineAttachment = signatureImageSource
+      ? await fetchInlineAttachmentFromUrl(signatureImageSource)
+      : null
+    const replyContent = buildReplyContent(draftReply || '', branding, inlineAttachment)
 
     if (account.provider === 'outlook') {
       const draft = await createOutlookReplyDraft(account, email.gmail_id)
-      await updateOutlookMessageBody(account, draft.id, finalReplyHtml)
+      await updateOutlookMessageBody(account, draft.id, replyContent.html)
+      if (inlineAttachment) {
+        await addOutlookInlineAttachment(account, draft.id, inlineAttachment)
+      }
       await sendOutlookDraft(account, draft.id)
     } else {
       const oauth2Client = new google.auth.OAuth2(
@@ -66,30 +78,13 @@ export async function POST(req: NextRequest) {
 
       const toEmail = email.contacts?.email || ''
       const subject = `Re: ${email.subject}`
-      const message = [
-        `To: ${toEmail}`,
-        `Subject: ${subject}`,
-        'MIME-Version: 1.0',
-        'Content-Type: multipart/alternative; boundary="reply-boundary"',
-        '',
-        '--reply-boundary',
-        'Content-Type: text/plain; charset=utf-8',
-        '',
-        finalReplyText,
-        '',
-        '--reply-boundary',
-        'Content-Type: text/html; charset=utf-8',
-        '',
-        finalReplyHtml,
-        '',
-        '--reply-boundary--'
-      ].join('\n')
-
-      const encodedMessage = Buffer.from(message)
-        .toString('base64')
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '')
+      const message = buildGmailReplyMime({
+        toEmail,
+        subject,
+        content: replyContent,
+        inlineAttachment
+      })
+      const encodedMessage = encodeGmailRawMessage(message)
 
       await gmail.users.messages.send({
         userId: 'me',
@@ -106,7 +101,8 @@ export async function POST(req: NextRequest) {
       .eq('id', emailId)
 
     return NextResponse.json({ success: true })
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

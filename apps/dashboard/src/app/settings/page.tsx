@@ -13,19 +13,37 @@ type Branding = {
   signature_source?: string | null
 }
 
+type Preview = {
+  text: string
+  html: string
+  browserPreviewHtml: string
+  diagnostics: {
+    provider: string
+    hasLogoUrl: boolean
+    signatureUsesLogoPlaceholder: boolean
+    signatureUsesLiteralLogoUrl: boolean
+    detectedSignatureImageSource: string | null
+    willEmbedInlineImage: boolean
+    inlineAttachment: {
+      filename: string
+      contentType: string
+      contentId: string
+      sizeBytes: number
+    } | null
+  }
+}
+
 export default function SettingsPage() {
   const { activeAccount } = useAccount()
   const [branding, setBranding] = useState<Branding | null>(null)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const [previewDraft, setPreviewDraft] = useState('Thanks for the update.\n\nWe can make that adjustment and send revised drawings tomorrow.')
+  const [preview, setPreview] = useState<Preview | null>(null)
+  const [previewLoading, setPreviewLoading] = useState(false)
 
-  useEffect(() => {
-    if (!activeAccount) return
-    void loadBranding(activeAccount)
-  }, [activeAccount])
-
-  const loadBranding = async (accountEmail: string) => {
+  async function loadBranding(accountEmail: string) {
     setLoading(true)
     setMessage(null)
 
@@ -41,6 +59,13 @@ export default function SettingsPage() {
     setBranding(body)
     setLoading(false)
   }
+
+  useEffect(() => {
+    if (!activeAccount) return
+    queueMicrotask(() => {
+      void loadBranding(activeAccount)
+    })
+  }, [activeAccount])
 
   const saveBranding = async () => {
     if (!branding) return
@@ -111,6 +136,33 @@ export default function SettingsPage() {
       signature_source: body.signature_source
     })
     setMessage('Gmail signature imported')
+  }
+
+  const loadPreview = async () => {
+    if (!branding) return
+
+    setPreviewLoading(true)
+    setMessage(null)
+
+    const response = await fetch('/api/settings/branding/preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        accountEmail: branding.user_email,
+        draftReply: previewDraft
+      })
+    })
+
+    const body = await response.json().catch(() => null)
+
+    if (!response.ok) {
+      setMessage(body?.error || 'Failed to build preview')
+      setPreviewLoading(false)
+      return
+    }
+
+    setPreview(body)
+    setPreviewLoading(false)
   }
 
   return (
@@ -214,7 +266,7 @@ export default function SettingsPage() {
                 style={{ ...textareaStyle, minHeight: '180px' }}
               />
               <div style={hintStyle}>
-                Use normal HTML. If you uploaded a logo, you can reference it with <code>{'{{logo_url}}'}</code>.
+                Use normal HTML. If you uploaded a logo, reference it with <code>{'{{logo_url}}'}</code>. Sends will replace that with an inline embedded image automatically.
               </div>
 
               <label style={labelStyle}>Signature Text</label>
@@ -267,6 +319,132 @@ export default function SettingsPage() {
                 onChange={e => setBranding({ ...branding, logo_url: e.target.value })}
                 style={inputStyle}
               />
+            </div>
+
+            <div style={{
+              padding: '24px',
+              background: 'var(--warm-white)',
+              border: '1px solid var(--border)'
+            }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '16px',
+                gap: '16px'
+              }}>
+                <div>
+                  <div style={{
+                    fontFamily: 'var(--font-dm-mono)',
+                    fontSize: '9px',
+                    letterSpacing: '2px',
+                    color: 'var(--gold)',
+                    textTransform: 'uppercase',
+                    marginBottom: '8px'
+                  }}>
+                    Preview
+                  </div>
+                  <div style={{ fontSize: '13px', color: 'var(--mid)' }}>
+                    Compose the exact reply body used for sending and check whether the logo will be attached inline.
+                  </div>
+                </div>
+                <button
+                  onClick={loadPreview}
+                  disabled={previewLoading}
+                  style={secondaryButtonStyle}
+                >
+                  {previewLoading ? 'Building...' : 'Build Preview'}
+                </button>
+              </div>
+
+              <label style={labelStyle}>Sample Reply</label>
+              <textarea
+                value={previewDraft}
+                onChange={e => setPreviewDraft(e.target.value)}
+                style={{ ...textareaStyle, minHeight: '120px' }}
+              />
+
+              {preview && (
+                <div style={{ display: 'grid', gap: '20px', marginTop: '20px' }}>
+                  <div style={{
+                    padding: '16px',
+                    background: 'var(--cream)',
+                    border: '1px solid var(--border)'
+                  }}>
+                    <div style={{
+                      fontFamily: 'var(--font-dm-mono)',
+                      fontSize: '9px',
+                      letterSpacing: '2px',
+                      color: 'var(--gold)',
+                      textTransform: 'uppercase',
+                      marginBottom: '12px'
+                    }}>
+                      Diagnostics
+                    </div>
+                    <div style={diagnosticLineStyle}>Provider: {preview.diagnostics.provider}</div>
+                    <div style={diagnosticLineStyle}>Logo uploaded: {preview.diagnostics.hasLogoUrl ? 'yes' : 'no'}</div>
+                    <div style={diagnosticLineStyle}>
+                      Uses {'{{logo_url}}'}: {preview.diagnostics.signatureUsesLogoPlaceholder ? 'yes' : 'no'}
+                    </div>
+                    <div style={diagnosticLineStyle}>
+                      Uses saved logo URL: {preview.diagnostics.signatureUsesLiteralLogoUrl ? 'yes' : 'no'}
+                    </div>
+                    <div style={diagnosticLineStyle}>
+                      Detected signature image source: {preview.diagnostics.detectedSignatureImageSource || 'none'}
+                    </div>
+                    <div style={diagnosticLineStyle}>
+                      Will embed inline image: {preview.diagnostics.willEmbedInlineImage ? 'yes' : 'no'}
+                    </div>
+                    {preview.diagnostics.inlineAttachment && (
+                      <>
+                        <div style={diagnosticLineStyle}>Attachment file: {preview.diagnostics.inlineAttachment.filename}</div>
+                        <div style={diagnosticLineStyle}>Attachment type: {preview.diagnostics.inlineAttachment.contentType}</div>
+                        <div style={diagnosticLineStyle}>Content-ID: {preview.diagnostics.inlineAttachment.contentId}</div>
+                        <div style={diagnosticLineStyle}>Attachment size: {preview.diagnostics.inlineAttachment.sizeBytes} bytes</div>
+                      </>
+                    )}
+                  </div>
+
+                  <div style={{
+                    padding: '16px',
+                    background: 'var(--cream)',
+                    border: '1px solid var(--border)'
+                  }}>
+                    <div style={{
+                      fontFamily: 'var(--font-dm-mono)',
+                      fontSize: '9px',
+                      letterSpacing: '2px',
+                      color: 'var(--gold)',
+                      textTransform: 'uppercase',
+                      marginBottom: '12px'
+                    }}>
+                      HTML Preview
+                    </div>
+                    <div
+                      style={{ background: '#fff', padding: '16px', border: '1px solid var(--border)' }}
+                      dangerouslySetInnerHTML={{ __html: preview.browserPreviewHtml }}
+                    />
+                  </div>
+
+                  <div style={{
+                    padding: '16px',
+                    background: 'var(--cream)',
+                    border: '1px solid var(--border)'
+                  }}>
+                    <div style={{
+                      fontFamily: 'var(--font-dm-mono)',
+                      fontSize: '9px',
+                      letterSpacing: '2px',
+                      color: 'var(--gold)',
+                      textTransform: 'uppercase',
+                      marginBottom: '12px'
+                    }}>
+                      Text Preview
+                    </div>
+                    <pre style={preStyle}>{preview.text}</pre>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div style={{
@@ -333,6 +511,12 @@ const hintStyle = {
   lineHeight: 1.6
 } as const
 
+const diagnosticLineStyle = {
+  fontSize: '13px',
+  color: 'var(--slate)',
+  lineHeight: 1.7
+} as const
+
 const inputStyle = {
   width: '100%',
   padding: '12px 14px',
@@ -354,6 +538,16 @@ const textareaStyle = {
   outline: 'none',
   resize: 'vertical' as const
 }
+
+const preStyle = {
+  margin: 0,
+  whiteSpace: 'pre-wrap' as const,
+  wordBreak: 'break-word' as const,
+  fontFamily: 'var(--font-dm-mono)',
+  fontSize: '12px',
+  lineHeight: 1.7,
+  color: 'var(--slate)'
+} as const
 
 const primaryButtonStyle = {
   padding: '12px 16px',
