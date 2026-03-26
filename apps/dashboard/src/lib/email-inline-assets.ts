@@ -1,4 +1,4 @@
-import type { InlineAttachment } from './email-compose.ts'
+import type { InlineAttachment } from './email-compose'
 
 const DEFAULT_CONTENT_TYPE = 'application/octet-stream'
 const getInlineExtension = (contentType: string) => {

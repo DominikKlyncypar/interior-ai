@@ -1,5 +1,5 @@
-import { applyEmailSignatureText, buildReplyHtml } from './email-brand.ts'
-import type { AccountBranding } from './email-brand.ts'
+import { applyEmailSignatureText, buildReplyHtml } from './email-brand'
+import type { AccountBranding } from './email-brand'
 
 export type InlineAttachment = {
   contentId: string

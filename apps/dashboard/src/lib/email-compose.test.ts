@@ -4,7 +4,7 @@ import {
   buildReplyContent,
   buildGmailReplyMime,
   encodeGmailRawMessage
-} from './email-compose.ts'
+} from './email-compose'
 
 const tests: Array<{ name: string; run: () => void }> = [
   {
