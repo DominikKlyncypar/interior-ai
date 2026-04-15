@@ -24,6 +24,13 @@ export const extractPlainTextFromHtml = (html: string) =>
     .replace(/[ \t]{2,}/g, ' ')
     .trim()
 
+export const looksLikeHtml = (value: string) => {
+  const trimmed = value.trim()
+  if (!trimmed) return false
+
+  return /<\/?(html|body|div|span|p|br|table|tr|td|h[1-6]|a|img|style|section|article|ul|ol|li)\b/i.test(trimmed)
+}
+
 export const parseFromHeader = (value: string) => {
   const match = value.match(/^(?:"?([^"]*)"?\s)?<?([^<>@\s]+@[^<>@\s]+)>?$/)
 

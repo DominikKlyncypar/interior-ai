@@ -3,10 +3,10 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 const options = [
-  { label: 'Today only', value: 0, description: 'Only process emails from today forward' },
-  { label: 'Last 7 days', value: 7, description: 'Catch up on the past week' },
-  { label: 'Last 30 days', value: 30, description: 'Catch up on the past month' },
-  { label: 'Last 90 days', value: 90, description: 'Go back three months' },
+  { label: 'Today only', value: 0, description: 'Start clean and only process what lands from here onward.' },
+  { label: 'Last 7 days', value: 7, description: 'Catch the most recent studio activity without a deep backlog.' },
+  { label: 'Last 30 days', value: 30, description: 'Useful if the inbox has already been drifting for a few weeks.' },
+  { label: 'Last 90 days', value: 90, description: 'A fuller catch-up pass for firms starting from a cold inbox.' },
 ]
 
 export default function OnboardingPage() {
@@ -17,22 +17,21 @@ export default function OnboardingPage() {
 
   const handleContinue = async () => {
     if (selected === null) return
+
     setLoading(true)
     setError(null)
 
     const fetchSince = new Date()
     fetchSince.setDate(fetchSince.getDate() - selected)
-    // Force UTC midnight to avoid timezone issues
-    const fetchSinceUTC = new Date(Date.UTC(
-      fetchSince.getFullYear(),
-      fetchSince.getMonth(),
-      fetchSince.getDate()
-    ))
+
+    const fetchSinceUTC = new Date(
+      Date.UTC(fetchSince.getFullYear(), fetchSince.getMonth(), fetchSince.getDate())
+    )
 
     const response = await fetch('/api/onboarding/set-fetch-since', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fetchSince: fetchSinceUTC.toISOString() })
+      body: JSON.stringify({ fetchSince: fetchSinceUTC.toISOString() }),
     })
 
     if (!response.ok) {
@@ -46,136 +45,68 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'var(--cream)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '40px'
-    }}>
-      <div style={{ maxWidth: '560px', width: '100%' }}>
+    <div className="onboarding-shell">
+      <section className="onboarding-card">
+        <div className="onboarding-layout">
+          <div className="stack-lg">
+            <div>
+              <div className="eyebrow">Interior AI Setup</div>
+              <h1 className="page-title">
+                How far back
+                <br />
+                <em>should we read?</em>
+              </h1>
+            </div>
 
-        {/* Header */}
-        <div style={{ marginBottom: '48px' }}>
-          <div style={{
-            fontFamily: 'var(--font-dm-mono)',
-            fontSize: '10px',
-            letterSpacing: '3px',
-            color: 'var(--gold)',
-            textTransform: 'uppercase',
-            marginBottom: '16px'
-          }}>
-            Interior AI — Setup
-          </div>
-          <h1 style={{
-            fontFamily: 'var(--font-cormorant)',
-            fontSize: '48px',
-            fontWeight: 300,
-            lineHeight: 1.1,
-            marginBottom: '16px'
-          }}>
-            How far back should<br />
-            <em style={{ fontStyle: 'italic', color: 'var(--gold)' }}>we look?</em>
-          </h1>
-          <p style={{
-            fontSize: '14px',
-            color: 'var(--mid)',
-            lineHeight: 1.75,
-            maxWidth: '420px'
-          }}>
-            We'll start processing your emails from this point forward. 
-            You can always change this later in settings.
-          </p>
-        </div>
-
-        {/* Options */}
-        <div style={{
-          display: 'grid',
-          gap: '2px',
-          background: 'var(--border)',
-          border: '1px solid var(--border)',
-          marginBottom: '24px'
-        }}>
-          {options.map((option) => (
-            <div
-              key={option.value}
-              onClick={() => setSelected(option.value)}
-              style={{
-                background: selected === option.value ? 'white' : 'var(--warm-white)',
-                padding: '24px 28px',
-                cursor: 'pointer',
-                borderLeft: selected === option.value ? '3px solid var(--gold)' : '3px solid transparent',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              <div>
-                <div style={{
-                  fontFamily: 'var(--font-cormorant)',
-                  fontSize: '22px',
-                  fontWeight: 400,
-                  marginBottom: '4px'
-                }}>
-                  {option.label}
+            <div className="panel">
+              <div className="eyebrow">What happens next</div>
+              <div className="stack-sm">
+                <div className="info-card">
+                  <h2 className="info-card__title">Inbox connection stays intact</h2>
+                  <p className="info-card__copy">You are only choosing how much history to process, not granting broader scope.</p>
                 </div>
-                <div style={{
-                  fontSize: '13px',
-                  color: 'var(--mid)'
-                }}>
-                  {option.description}
+                <div className="info-card">
+                  <h2 className="info-card__title">You can change this later</h2>
+                  <p className="info-card__copy">If the first pull is too narrow or too broad, adjust the range after setup.</p>
                 </div>
               </div>
-              <div style={{
-                width: '20px',
-                height: '20px',
-                borderRadius: '50%',
-                border: selected === option.value ? '2px solid var(--gold)' : '2px solid var(--border)',
-                background: selected === option.value ? 'var(--gold)' : 'transparent',
-                flexShrink: 0,
-                transition: 'all 0.15s ease'
-              }} />
             </div>
-          ))}
-        </div>
-
-        {/* Continue Button */}
-        <button
-          onClick={handleContinue}
-          disabled={selected === null || loading}
-          style={{
-            width: '100%',
-            padding: '16px',
-            background: selected !== null ? 'var(--charcoal)' : 'var(--border)',
-            color: selected !== null ? 'var(--cream)' : 'var(--light)',
-            border: 'none',
-            borderRadius: '2px',
-            fontFamily: 'var(--font-dm-mono)',
-            fontSize: '11px',
-            letterSpacing: '3px',
-            textTransform: 'uppercase',
-            cursor: selected !== null ? 'pointer' : 'not-allowed',
-            transition: 'all 0.15s ease'
-          }}
-        >
-          {loading ? 'Setting up...' : 'Continue'}
-        </button>
-
-        {error && (
-          <div style={{
-            marginTop: '12px',
-            fontFamily: 'var(--font-dm-mono)',
-            fontSize: '10px',
-            letterSpacing: '0.5px',
-            color: '#8B4A4A'
-          }}>
-            {error}
           </div>
-        )}
 
-      </div>
+          <div className="stack-md">
+            <div className="onboarding-option-list">
+              {options.map((option) => {
+                const isSelected = selected === option.value
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={`onboarding-option${isSelected ? ' is-selected' : ''}`}
+                    onClick={() => setSelected(option.value)}
+                  >
+                    <div>
+                      <h2 className="onboarding-option__title">{option.label}</h2>
+                      <p className="onboarding-option__copy">{option.description}</p>
+                    </div>
+                    <div className={`selection-dot${isSelected ? ' is-selected' : ''}`} />
+                  </button>
+                )
+              })}
+            </div>
+
+            <button
+              type="button"
+              className="button button--dark"
+              onClick={handleContinue}
+              disabled={selected === null || loading}
+            >
+              {loading ? 'Setting up' : 'Continue'}
+            </button>
+
+            {error && <div className="error-text">{error}</div>}
+          </div>
+        </div>
+      </section>
     </div>
   )
 }

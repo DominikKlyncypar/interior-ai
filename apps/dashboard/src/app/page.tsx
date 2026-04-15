@@ -2,501 +2,204 @@
 import { signIn, useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 
+const stats = [
+  { value: '8', label: 'Agents planned' },
+  { value: '24/7', label: 'Monitoring cadence' },
+  { value: '10 min', label: 'Email check interval' },
+]
+
+const features = [
+  {
+    accent: 'Lead Engine',
+    title: 'Business development that watches the market while the studio sleeps.',
+    copy: 'Permit filings, RFPs, and relationship signals get turned into leads and outreach drafts instead of disappearing into someone’s bookmarks.',
+  },
+  {
+    accent: 'Inbox Desk',
+    title: 'Email review shaped like an editorial workflow, not a ticket queue.',
+    copy: 'Messages are categorized, summarized, and drafted in your studio voice so approval takes minutes instead of cognitive overhead.',
+  },
+  {
+    accent: 'Relationship Memory',
+    title: 'Your contact history stops depending on whoever happens to remember it.',
+    copy: 'The system keeps timing, context, and prior interactions visible, so outreach has continuity and actual relevance.',
+  },
+  {
+    accent: 'Financial Pulse',
+    title: 'Profitability and invoicing become part of the weekly operating rhythm.',
+    copy: 'Instead of waiting for end-of-month surprises, the studio gets a clear running read on cash movement and project health.',
+  },
+]
+
+const steps = [
+  {
+    step: '01',
+    title: 'Connect your email',
+    copy: 'Use Gmail or Outlook. Initial setup is short and the first useful workflow is the inbox review pass.',
+  },
+  {
+    step: '02',
+    title: 'Choose the first processing window',
+    copy: 'Pick how far back the agent should go so the rollout matches the messiness of the actual inbox.',
+  },
+  {
+    step: '03',
+    title: 'Approve work, don’t babysit it',
+    copy: 'The system surfaces drafts, triage, and attachments in a review surface built for quick human decisions.',
+  },
+]
+
 export default function HomePage() {
   const { data: session } = useSession()
   const router = useRouter()
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'var(--charcoal)',
-      color: 'var(--cream)',
-      fontFamily: 'var(--font-manrope)',
-      overflowX: 'hidden'
-    }}>
-
-      {/* Nav */}
-      <nav style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '32px 60px',
-        borderBottom: '1px solid rgba(255,255,255,0.06)'
-      }}>
-        <div style={{
-          fontFamily: 'var(--font-dm-mono)',
-          fontSize: '10px',
-          letterSpacing: '3px',
-          color: 'var(--gold)',
-          textTransform: 'uppercase'
-        }}>
-          Interior AI
-        </div>
-
+    <div className="landing-shell">
+      <nav className="landing-nav">
+        <div className="landing-nav__brand">Interior AI</div>
         {session && (
-          <div
-            onClick={() => router.push('/dashboard')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '8px 16px',
-              border: '1px solid rgba(255,255,255,0.15)',
-              borderRadius: '2px',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease'
-            }}
-            onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--gold)')}
-            onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)')}
-          >
-            <div style={{
-              width: '28px',
-              height: '28px',
-              borderRadius: '50%',
-              background: 'var(--gold)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--charcoal)',
-              fontFamily: 'var(--font-dm-mono)',
-              fontSize: '11px',
-              fontWeight: 600,
-              flexShrink: 0
-            }}>
-              {session.user?.name?.charAt(0).toUpperCase() || '?'}
-            </div>
-            <div>
-              <div style={{
-                fontFamily: 'var(--font-dm-mono)',
-                fontSize: '10px',
-                letterSpacing: '1px',
-                color: 'var(--cream)',
-              }}>
-                {session.user?.name?.split(' ')[0]}
-              </div>
-              <div style={{
-                fontFamily: 'var(--font-dm-mono)',
-                fontSize: '9px',
-                color: 'var(--mid)',
-                letterSpacing: '1px'
-              }}>
-                Go to dashboard →
-              </div>
-            </div>
-          </div>
+          <button type="button" className="landing-nav__button" onClick={() => router.push('/dashboard')}>
+            <span>{session.user?.name?.split(' ')[0] || 'User'}</span>
+            <span className="eyebrow eyebrow--muted" style={{ marginBottom: 0 }}>
+              Dashboard
+            </span>
+          </button>
         )}
       </nav>
 
-      {/* Hero */}
-      <div style={{
-        padding: '120px 60px 100px',
-        maxWidth: '1100px',
-        margin: '0 auto',
-        position: 'relative'
-      }}>
-        {/* Decorative circles */}
-        <div style={{
-          position: 'absolute',
-          top: '60px',
-          right: '0',
-          width: '500px',
-          height: '500px',
-          borderRadius: '50%',
-          border: '1px solid rgba(184,147,63,0.1)',
-          pointerEvents: 'none'
-        }} />
-        <div style={{
-          position: 'absolute',
-          top: '100px',
-          right: '40px',
-          width: '340px',
-          height: '340px',
-          borderRadius: '50%',
-          border: '1px solid rgba(184,147,63,0.15)',
-          pointerEvents: 'none'
-        }} />
+      <section className="landing-section landing-hero">
+        <div>
+          <div className="eyebrow">Operating system for interior design firms</div>
+          <h1 className="landing-hero__title">
+            A sharper
+            <br />
+            studio desk
+            <br />
+            built on <em>agents</em>
+          </h1>
 
-        <div style={{
-          fontFamily: 'var(--font-dm-mono)',
-          fontSize: '10px',
-          letterSpacing: '3px',
-          color: 'var(--gold)',
-          textTransform: 'uppercase',
-          marginBottom: '24px'
-        }}>
-          AI Operating System — Interior Design
+          <div className="landing-actions">
+            <button
+              type="button"
+              className="button button--primary"
+              onClick={() => signIn('google', { callbackUrl: '/onboarding' })}
+            >
+              Sign in with Gmail
+            </button>
+            <button
+              type="button"
+              className="button button--secondary"
+              onClick={() => signIn('azure-ad', { callbackUrl: '/onboarding' })}
+            >
+              Sign in with Outlook
+            </button>
+          </div>
         </div>
 
-        <h1 style={{
-          fontFamily: 'var(--font-cormorant)',
-          fontSize: 'clamp(52px, 7vw, 88px)',
-          fontWeight: 300,
-          lineHeight: 1.05,
-          maxWidth: '760px',
-          marginBottom: '32px'
-        }}>
-          Your firm,<br />
-          running on<br />
-          <em style={{ fontStyle: 'italic', color: 'var(--gold-light)' }}>intelligence.</em>
-        </h1>
-
-        <p style={{
-          fontSize: '16px',
-          color: 'var(--light)',
-          maxWidth: '480px',
-          lineHeight: 1.8,
-          marginBottom: '48px'
-        }}>
-          A fleet of AI agents that finds leads, manages your inbox,
-          tracks finances, and keeps your firm visible —
-          so your team can focus on design.
-        </p>
-
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-          <button
-            onClick={() => signIn('google', { callbackUrl: '/onboarding' })}
-            style={{
-              padding: '16px 40px',
-              background: 'var(--gold)',
-              color: 'var(--charcoal)',
-              border: 'none',
-              fontFamily: 'var(--font-dm-mono)',
-              fontSize: '11px',
-              letterSpacing: '3px',
-              textTransform: 'uppercase',
-              cursor: 'pointer',
-              borderRadius: '2px',
-              transition: 'all 0.15s ease'
-            }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'var(--gold-light)')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'var(--gold)')}
-          >
-            Sign in with Gmail
-          </button>
-          <button
-            onClick={() => signIn('azure-ad', { callbackUrl: '/onboarding' })}
-            style={{
-              padding: '16px 40px',
-              background: 'transparent',
-              color: 'var(--cream)',
-              border: '1px solid rgba(255,255,255,0.3)',
-              fontFamily: 'var(--font-dm-mono)',
-              fontSize: '11px',
-              letterSpacing: '3px',
-              textTransform: 'uppercase',
-              cursor: 'pointer',
-              borderRadius: '2px',
-              transition: 'all 0.15s ease'
-            }}
-            onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--gold)')}
-            onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)')}
-          >
-            Sign in with Outlook
-          </button>
-        </div>
-
-        <div style={{
-          marginTop: '16px',
-          fontFamily: 'var(--font-dm-mono)',
-          fontSize: '10px',
-          color: 'var(--mid)',
-          letterSpacing: '1px'
-        }}>
-          Free to start · No credit card required
-        </div>
-      </div>
-
-      {/* Stats strip */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: '1px',
-        background: 'rgba(255,255,255,0.06)',
-        borderTop: '1px solid rgba(255,255,255,0.06)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-        margin: '0 0 100px'
-      }}>
-        {[
-          { value: '8', label: 'AI Agents' },
-          { value: '24/7', label: 'Always Running' },
-          { value: '10min', label: 'Check Interval' },
-        ].map((stat) => (
-          <div key={stat.label} style={{
-            padding: '40px 48px',
-            background: 'var(--charcoal)'
-          }}>
-            <div style={{
-              fontFamily: 'var(--font-cormorant)',
-              fontSize: '48px',
-              fontWeight: 300,
-              color: 'var(--gold-light)',
-              lineHeight: 1,
-              marginBottom: '8px'
-            }}>
-              {stat.value}
+        <div className="landing-hero__card">
+          <div className="eyebrow">Studio Snapshot</div>
+          <div className="stack-sm">
+            <div className="info-card">
+              <h2 className="info-card__title">Morning queue, already triaged</h2>
+              <p className="info-card__copy">Important messages rise to the top with a draft reply and the context that usually lives in someone’s head.</p>
             </div>
-            <div style={{
-              fontFamily: 'var(--font-dm-mono)',
-              fontSize: '10px',
-              color: 'var(--mid)',
-              letterSpacing: '2px',
-              textTransform: 'uppercase'
-            }}>
-              {stat.label}
+            <div className="info-card">
+              <h2 className="info-card__title">Lead signals, captured in one rhythm</h2>
+              <p className="info-card__copy">Instead of scattered tools and spreadsheets, the operating layer keeps business development visible and current.</p>
+            </div>
+            <div className="info-card">
+              <h2 className="info-card__title">A product surface with actual taste</h2>
+              <p className="info-card__copy">A tighter operating surface keeps the system readable when the studio is moving quickly.</p>
             </div>
           </div>
-        ))}
-      </div>
-
-      {/* Features */}
-      <div style={{ padding: '0 60px 100px', maxWidth: '1100px', margin: '0 auto 100px' }}>
-        <div style={{
-          fontFamily: 'var(--font-dm-mono)',
-          fontSize: '10px',
-          letterSpacing: '3px',
-          color: 'var(--gold)',
-          textTransform: 'uppercase',
-          marginBottom: '16px'
-        }}>
-          What it does
         </div>
-        <h2 style={{
-          fontFamily: 'var(--font-cormorant)',
-          fontSize: 'clamp(36px, 4vw, 52px)',
-          fontWeight: 300,
-          marginBottom: '64px',
-          paddingBottom: '24px',
-          borderBottom: '1px solid rgba(255,255,255,0.08)'
-        }}>
-          Eight agents. One operating system.
-        </h2>
+      </section>
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: '2px',
-          background: 'rgba(255,255,255,0.06)'
-        }}>
-          {[
-            {
-              icon: '🎯',
-              title: 'Business Development',
-              desc: 'Monitors permit filings, LinkedIn signals, and RFPs 24/7. Drafts personalized outreach for every new lead it finds.'
-            },
-            {
-              icon: '✉️',
-              title: 'Email & Communications',
-              desc: "Reads, categorizes, and drafts replies in your firm's voice. Your inbox handled before you sit down in the morning."
-            },
-            {
-              icon: '🤝',
-              title: 'Relationship & CRM',
-              desc: 'Tracks every architect, developer, and property manager in your orbit. Surfaces the right moment to reach out.'
-            },
-            {
-              icon: '💰',
-              title: 'Financial Intelligence',
-              desc: 'Tracks invoices, monitors project profitability, and delivers a weekly P&L to your inbox every Monday.'
-            },
-          ].map((feature) => (
-            <div key={feature.title} style={{
-              background: 'var(--charcoal)',
-              padding: '40px 36px',
-              borderLeft: '1px solid rgba(255,255,255,0.04)'
-            }}>
-              <div style={{ fontSize: '28px', marginBottom: '16px' }}>{feature.icon}</div>
-              <h3 style={{
-                fontFamily: 'var(--font-cormorant)',
-                fontSize: '24px',
-                fontWeight: 400,
-                marginBottom: '12px',
-                color: 'var(--cream)'
-              }}>
-                {feature.title}
-              </h3>
-              <p style={{
-                fontSize: '13px',
-                color: 'var(--mid)',
-                lineHeight: 1.75
-              }}>
-                {feature.desc}
-              </p>
-            </div>
+      <section className="landing-section">
+        <div className="landing-stats">
+          {stats.map((stat) => (
+            <article key={stat.label} className="landing-stat">
+              <div className="landing-stat__value">{stat.value}</div>
+              <div className="landing-stat__label">{stat.label}</div>
+            </article>
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* How it works */}
-      <div style={{
-        background: 'rgba(255,255,255,0.02)',
-        borderTop: '1px solid rgba(255,255,255,0.06)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-        padding: '100px 60px',
-      }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <div style={{
-            fontFamily: 'var(--font-dm-mono)',
-            fontSize: '10px',
-            letterSpacing: '3px',
-            color: 'var(--gold)',
-            textTransform: 'uppercase',
-            marginBottom: '16px'
-          }}>
-            How it works
-          </div>
-          <h2 style={{
-            fontFamily: 'var(--font-cormorant)',
-            fontSize: 'clamp(36px, 4vw, 52px)',
-            fontWeight: 300,
-            marginBottom: '64px'
-          }}>
-            Up and running in minutes.
+      <section className="landing-section">
+        <div className="landing-section__header">
+          <div className="eyebrow">What it does</div>
+          <h2 className="landing-section__title">
+            One system,
+            <br />
+            <em>multiple operating roles</em>
           </h2>
-
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '2px',
-            background: 'rgba(255,255,255,0.06)'
-          }}>
-            {[
-              {
-                step: '01',
-                title: 'Connect your email',
-                desc: 'Sign in with Gmail or Outlook and grant access. Takes 30 seconds. Your credentials are encrypted and never shared.'
-              },
-              {
-                step: '02',
-                title: 'Choose your starting point',
-                desc: 'Tell the system how far back to look. Today, last week, last month — you decide what gets processed.'
-              },
-              {
-                step: '03',
-                title: 'Agents go to work',
-                desc: 'Your email agent starts immediately. Every 10 minutes it checks for new emails, categorizes them, and drafts replies for your review.'
-              },
-            ].map((item) => (
-              <div key={item.step} style={{
-                background: 'var(--charcoal)',
-                padding: '40px 36px'
-              }}>
-                <div style={{
-                  fontFamily: 'var(--font-cormorant)',
-                  fontSize: '72px',
-                  fontWeight: 300,
-                  color: 'rgba(255,255,255,0.06)',
-                  lineHeight: 1,
-                  marginBottom: '16px'
-                }}>
-                  {item.step}
-                </div>
-                <h3 style={{
-                  fontFamily: 'var(--font-cormorant)',
-                  fontSize: '22px',
-                  fontWeight: 400,
-                  marginBottom: '12px'
-                }}>
-                  {item.title}
-                </h3>
-                <p style={{
-                  fontSize: '13px',
-                  color: 'var(--mid)',
-                  lineHeight: 1.75
-                }}>
-                  {item.desc}
-                </p>
-              </div>
-            ))}
-          </div>
         </div>
-      </div>
 
-      {/* Bottom CTA */}
-      <div style={{
-        padding: '100px 60px',
-        textAlign: 'center',
-        maxWidth: '600px',
-        margin: '0 auto'
-      }}>
-        <h2 style={{
-          fontFamily: 'var(--font-cormorant)',
-          fontSize: 'clamp(42px, 5vw, 64px)',
-          fontWeight: 300,
-          lineHeight: 1.1,
-          marginBottom: '32px'
-        }}>
-          Ready to run your firm on <em style={{ color: 'var(--gold-light)', fontStyle: 'italic' }}>intelligence?</em>
-        </h2>
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+        <div className="landing-features">
+          {features.map((feature) => (
+            <article key={feature.accent} className="feature-card">
+              <div className="feature-card__accent">{feature.accent}</div>
+              <h3 className="landing-feature__title">{feature.title}</h3>
+              <p className="feature-card__copy">{feature.copy}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="landing-section">
+        <div className="landing-section__header">
+          <div className="eyebrow">How it works</div>
+          <h2 className="landing-section__title">
+            Fast to start,
+            <br />
+            <em>clear to review</em>
+          </h2>
+        </div>
+
+        <div className="landing-steps">
+          {steps.map((item) => (
+            <article key={item.step} className="step-card">
+              <div className="step-card__step">{item.step}</div>
+              <h3 className="step-card__title">{item.title}</h3>
+              <p className="step-card__copy">{item.copy}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="landing-section" style={{ textAlign: 'center' }}>
+        <div className="landing-section__header">
+          <div className="eyebrow">Start</div>
+          <h2 className="landing-section__title">
+            Put the studio on a
+            <br />
+            <em>better operating surface</em>
+          </h2>
+        </div>
+
+        <div className="landing-actions" style={{ justifyContent: 'center' }}>
           <button
+            type="button"
+            className="button button--primary"
             onClick={() => signIn('google', { callbackUrl: '/onboarding' })}
-            style={{
-              padding: '16px 48px',
-              background: 'var(--gold)',
-              color: 'var(--charcoal)',
-              border: 'none',
-              fontFamily: 'var(--font-dm-mono)',
-              fontSize: '11px',
-              letterSpacing: '3px',
-              textTransform: 'uppercase',
-              cursor: 'pointer',
-              borderRadius: '2px',
-              transition: 'all 0.15s ease'
-            }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'var(--gold-light)')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'var(--gold)')}
           >
-            Get Started with Gmail
+            Get started with Gmail
           </button>
           <button
+            type="button"
+            className="button button--secondary"
             onClick={() => signIn('azure-ad', { callbackUrl: '/onboarding' })}
-            style={{
-              padding: '16px 48px',
-              background: 'transparent',
-              color: 'var(--cream)',
-              border: '1px solid rgba(255,255,255,0.3)',
-              fontFamily: 'var(--font-dm-mono)',
-              fontSize: '11px',
-              letterSpacing: '3px',
-              textTransform: 'uppercase',
-              cursor: 'pointer',
-              borderRadius: '2px',
-              transition: 'all 0.15s ease'
-            }}
-            onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--gold)')}
-            onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)')}
           >
-            Get Started with Outlook
+            Get started with Outlook
           </button>
         </div>
-      </div>
+      </section>
 
-      {/* Footer */}
-      <div style={{
-        borderTop: '1px solid rgba(255,255,255,0.06)',
-        padding: '32px 60px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <div style={{
-          fontFamily: 'var(--font-dm-mono)',
-          fontSize: '10px',
-          color: 'var(--mid)',
-          letterSpacing: '2px'
-        }}>
-          INTERIOR AI
-        </div>
-        <div style={{
-          fontFamily: 'var(--font-dm-mono)',
-          fontSize: '10px',
-          color: 'var(--mid)',
-          letterSpacing: '1px'
-        }}>
-          © 2026
-        </div>
-      </div>
-
+      <footer className="landing-footer">
+        <span>Interior AI</span>
+        <span>2026</span>
+      </footer>
     </div>
   )
 }

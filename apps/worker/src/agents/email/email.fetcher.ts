@@ -6,6 +6,7 @@ import {
   buildAttachmentRecord,
   decodeBase64Url,
   extractPlainTextFromHtml,
+  looksLikeHtml,
   parseFromHeader
 } from './email.content'
 
@@ -121,12 +122,21 @@ const extractGmailBodies = async (
 
   walk(payload)
 
-  const bodyHtml = htmlBodies.join('\n\n').trim() || undefined
-  const bodyText = plainBodies.join('\n\n').trim() || (bodyHtml ? extractPlainTextFromHtml(bodyHtml) : '')
+  const plainBody = plainBodies.join('\n\n').trim()
+  const htmlBody = htmlBodies.join('\n\n').trim()
+  const normalizedBodyHtml = htmlBody || (looksLikeHtml(plainBody) ? plainBody : undefined)
+  const bodyText =
+    plainBody && !looksLikeHtml(plainBody)
+      ? plainBody
+      : normalizedBodyHtml
+        ? extractPlainTextFromHtml(normalizedBodyHtml)
+        : ''
 
-  logger.debug(`Fetched Gmail body for message ${messageId}; textLength=${bodyText.length} htmlLength=${bodyHtml?.length || 0}`)
+  logger.debug(
+    `Fetched Gmail body for message ${messageId}; textLength=${bodyText.length} htmlLength=${normalizedBodyHtml?.length || 0}`
+  )
 
-  return { bodyText, bodyHtml }
+  return { bodyText, bodyHtml: normalizedBodyHtml }
 }
 
 const extractGmailAttachments = async (

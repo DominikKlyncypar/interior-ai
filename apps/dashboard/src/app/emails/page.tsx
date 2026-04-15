@@ -1,36 +1,23 @@
-import Sidebar from '@/components/Sidebar'
 import EmailQueue from '@/components/EmailQueue'
+import Sidebar from '@/components/Sidebar'
 
 export default function EmailsPage() {
   return (
-    <div style={{ display: 'flex' }}>
+    <div className="app-shell">
       <Sidebar />
-      <main style={{ marginLeft: '220px', flex: 1, padding: '48px', minHeight: '100vh' }}>
-        
-        {/* Header */}
-        <div style={{ marginBottom: '48px' }}>
-          <div style={{
-            fontFamily: 'var(--font-dm-mono)',
-            fontSize: '10px',
-            letterSpacing: '3px',
-            color: 'var(--gold)',
-            textTransform: 'uppercase',
-            marginBottom: '8px'
-          }}>
-            Email Agent
-          </div>
-          <h1 style={{
-            fontFamily: 'var(--font-cormorant)',
-            fontSize: '48px',
-            fontWeight: 300,
-            lineHeight: 1.1,
-          }}>
-            Email Review Queue
-          </h1>
+      <main className="app-main">
+        <div className="page-wrap page-grid">
+          <section className="page-hero">
+            <div className="eyebrow">Email Agent</div>
+            <h1 className="page-title">
+              Review queue,
+              <br />
+              <em>without the clutter</em>
+            </h1>
+          </section>
+
+          <EmailQueue />
         </div>
-
-        <EmailQueue />
-
       </main>
     </div>
   )

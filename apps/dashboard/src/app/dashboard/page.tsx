@@ -1,8 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Sidebar from '@/components/Sidebar'
-import { getSupabase } from '@/lib/supabase'
 import { useAccount } from '@/context/AccountContext'
+import { getSupabase } from '@/lib/supabase'
 
 export default function Home() {
   const { activeAccount } = useAccount()
@@ -11,6 +11,7 @@ export default function Home() {
 
   useEffect(() => {
     if (!activeAccount) return
+
     const fetchCounts = async () => {
       const supabase = getSupabase()
 
@@ -29,144 +30,99 @@ export default function Home() {
       setEmailCount(emails ?? 0)
       setLeadCount(leads ?? 0)
     }
-    fetchCounts()
+
+    void fetchCounts()
   }, [activeAccount])
 
+  const metrics = [
+    {
+      label: 'Emails to Review',
+      value: emailCount,
+      note: 'Inbox items waiting for approval',
+      accent: 'var(--gold)',
+    },
+    {
+      label: 'New Leads',
+      value: leadCount,
+      note: 'Fresh opportunities surfaced by the system',
+      accent: 'var(--teal)',
+    },
+    {
+      label: 'Active Projects',
+      value: '--',
+      note: 'Project operations not wired in yet',
+      accent: 'var(--charcoal)',
+    },
+    {
+      label: 'Agents Running',
+      value: '2',
+      note: 'Email agent live, broader stack staged',
+      accent: 'var(--wine)',
+    },
+  ]
+
+  const agents = [
+    { name: 'Email Agent', status: 'Active', phase: 'Phase 1', tone: 'var(--gold-pale)', text: 'var(--gold)' },
+    { name: 'Business Development', status: 'Coming Soon', phase: 'Phase 1', tone: 'rgba(54, 49, 44, 0.08)', text: 'var(--mid)' },
+    { name: 'CRM Agent', status: 'Coming Soon', phase: 'Phase 2', tone: 'rgba(54, 49, 44, 0.08)', text: 'var(--mid)' },
+    { name: 'Financial Agent', status: 'Coming Soon', phase: 'Phase 2', tone: 'rgba(54, 49, 44, 0.08)', text: 'var(--mid)' },
+  ]
+
   return (
-    <div style={{ display: 'flex' }}>
+    <div className="app-shell">
       <Sidebar />
-      <main style={{ marginLeft: '220px', flex: 1, padding: '48px', minHeight: '100vh' }}>
+      <main className="app-main">
+        <div className="page-wrap">
+          <section className="page-hero">
+            <div className="eyebrow">Dashboard</div>
+            <h1 className="page-title">
+              Daily studio
+              <br />
+              <em>briefing</em>
+            </h1>
+          </section>
 
-        {/* Header */}
-        <div style={{ marginBottom: '48px' }}>
-          <div style={{
-            fontFamily: 'var(--font-dm-mono)',
-            fontSize: '10px',
-            letterSpacing: '3px',
-            color: 'var(--gold)',
-            textTransform: 'uppercase',
-            marginBottom: '8px'
-          }}>
-            Dashboard
-          </div>
-          <h1 style={{
-            fontFamily: 'var(--font-cormorant)',
-            fontSize: '48px',
-            fontWeight: 300,
-            lineHeight: 1.1,
-            color: 'var(--charcoal)'
-          }}>
-            Good morning,<br />
-            <em style={{ fontStyle: 'italic', color: 'var(--gold)' }}>here's your briefing.</em>
-          </h1>
-        </div>
+          <section className="metrics-grid">
+            {metrics.map((stat) => (
+              <article key={stat.label} className="metric-card" style={{ ['--accent' as string]: stat.accent }}>
+                <div className="metric-card__label">{stat.label}</div>
+                <div className="metric-card__value">{stat.value}</div>
+                <div className="stat-note">{stat.note}</div>
+              </article>
+            ))}
+          </section>
 
-        {/* Stats */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: '2px',
-          background: 'var(--border)',
-          border: '1px solid var(--border)',
-          marginBottom: '48px'
-        }}>
-          {[
-            { label: 'Emails to Review', value: emailCount, color: 'var(--gold)' },
-            { label: 'New Leads', value: leadCount, color: 'var(--teal)' },
-            { label: 'Active Projects', value: '—', color: 'var(--charcoal)' },
-            { label: 'Agents Running', value: '2', color: 'var(--charcoal)' },
-          ].map((stat) => (
-            <div key={stat.label} style={{
-              background: 'var(--warm-white)',
-              padding: '28px 24px',
-            }}>
-              <div style={{
-                fontFamily: 'var(--font-dm-mono)',
-                fontSize: '9px',
-                letterSpacing: '2px',
-                textTransform: 'uppercase',
-                color: 'var(--light)',
-                marginBottom: '12px'
-              }}>
-                {stat.label}
-              </div>
-              <div style={{
-                fontFamily: 'var(--font-cormorant)',
-                fontSize: '42px',
-                fontWeight: 300,
-                color: stat.color,
-                lineHeight: 1
-              }}>
-                {stat.value}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Agent Status */}
-        <div style={{
-          fontFamily: 'var(--font-dm-mono)',
-          fontSize: '10px',
-          letterSpacing: '3px',
-          color: 'var(--gold)',
-          textTransform: 'uppercase',
-          marginBottom: '16px'
-        }}>
-          Agent Status
-        </div>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: '2px',
-          background: 'var(--border)',
-          border: '1px solid var(--border)',
-        }}>
-          {[
-            { name: 'Email Agent', status: 'Active', phase: 'Phase 1' },
-            { name: 'Business Development', status: 'Coming Soon', phase: 'Phase 1' },
-            { name: 'CRM Agent', status: 'Coming Soon', phase: 'Phase 2' },
-            { name: 'Financial Agent', status: 'Coming Soon', phase: 'Phase 2' },
-          ].map((agent) => (
-            <div key={agent.name} style={{
-              background: 'var(--warm-white)',
-              padding: '20px 24px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }}>
+          <section className="panel">
+            <div className="panel-header">
               <div>
-                <div style={{
-                  fontFamily: 'var(--font-cormorant)',
-                  fontSize: '18px',
-                  fontWeight: 400,
-                  marginBottom: '4px'
-                }}>
-                  {agent.name}
-                </div>
-                <div style={{
-                  fontFamily: 'var(--font-dm-mono)',
-                  fontSize: '9px',
-                  color: 'var(--light)',
-                  letterSpacing: '1px'
-                }}>
-                  {agent.phase}
-                </div>
-              </div>
-              <div style={{
-                fontFamily: 'var(--font-dm-mono)',
-                fontSize: '9px',
-                letterSpacing: '1px',
-                padding: '4px 10px',
-                borderRadius: '2px',
-                background: agent.status === 'Active' ? 'var(--gold-pale)' : 'var(--cream)',
-                color: agent.status === 'Active' ? 'var(--gold)' : 'var(--light)',
-              }}>
-                {agent.status}
+                <div className="eyebrow">Agent Status</div>
+                <h2 className="section-title">
+                  What the system is
+                  <br />
+                  <em>actually running</em>
+                </h2>
               </div>
             </div>
-          ))}
-        </div>
 
+            <div className="agent-grid">
+              {agents.map((agent) => (
+                <article key={agent.name} className="agent-card">
+                  <div className="inline-row">
+                    <div>
+                      <h3 className="agent-card__title">{agent.name}</h3>
+                      <div className="kicker" style={{ color: 'var(--light)' }}>
+                        {agent.phase}
+                      </div>
+                    </div>
+                    <div className="status-badge" style={{ background: agent.tone, color: agent.text }}>
+                      {agent.status}
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        </div>
       </main>
     </div>
   )
