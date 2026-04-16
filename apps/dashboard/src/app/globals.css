@@ -91,7 +91,6 @@ img {
 .app-sidebar__brand {
   padding-bottom: 1.25rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  cursor: pointer;
 }
 
 .eyebrow {
@@ -108,16 +107,9 @@ img {
   color: var(--light);
 }
 
-.app-sidebar__title {
-  margin: 0;
-  font-family: var(--font-cormorant), serif;
-  font-size: 2rem;
-  font-weight: 400;
-  line-height: 0.95;
-}
-
 .app-sidebar__account {
   position: relative;
+  margin-top: auto;
 }
 
 .account-chip {
@@ -261,7 +253,6 @@ img {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-top: auto;
   padding-top: 1rem;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   font-size: 0.68rem;
@@ -746,12 +737,56 @@ img {
 
 .queue-layout {
   display: grid;
-  grid-template-columns: minmax(15rem, 0.8fr) minmax(0, 3.7fr);
+  grid-template-columns: minmax(18rem, 0.8fr) minmax(0, 2.4fr);
   gap: 1rem;
+}
+
+.email-workspace {
+  display: grid;
+  gap: 1rem;
+}
+
+.email-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: rgba(251, 247, 240, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+}
+
+.email-toolbar .eyebrow {
+  margin-bottom: 0.25rem;
+}
+
+.email-toolbar__title {
+  margin: 0;
+  font-family: var(--font-cormorant), serif;
+  font-size: clamp(2.4rem, 4vw, 3.4rem);
+  font-weight: 400;
+  line-height: 0.95;
+}
+
+.email-loading {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.email-loading__bar {
+  height: 4rem;
+  border-radius: var(--radius-md);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0.42));
 }
 
 .queue-list {
   padding: 0.5rem;
+  align-self: start;
+  max-height: calc(100vh - 11rem);
+  overflow: auto;
 }
 
 .queue-item {
@@ -847,9 +882,9 @@ img {
 .queue-detail {
   padding: 1.5rem;
   position: sticky;
-  top: 2rem;
+  top: 1rem;
   align-self: start;
-  max-height: calc(100vh - 4rem);
+  max-height: calc(100vh - 2rem);
   overflow: auto;
 }
 
@@ -1147,6 +1182,7 @@ img {
 
   .landing-footer,
   .landing-nav,
+  .email-toolbar,
   .panel-header,
   .queue-item__header,
   .queue-item__meta,

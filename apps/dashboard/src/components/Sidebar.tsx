@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { useAccount } from '@/context/AccountContext'
 
 const nav = [
+  { label: 'Home', href: '/' },
   { label: 'Overview', href: '/dashboard' },
   { label: 'Emails', href: '/emails' },
   { label: 'Leads', href: '/leads' },
@@ -23,25 +24,24 @@ export default function Sidebar() {
   return (
     <aside className="app-sidebar">
       <div className="app-sidebar__panel">
-        <div
-          className="app-sidebar__brand"
-          onClick={() => router.push('/')}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault()
-              router.push('/')
-            }
-          }}
-        >
+        <div className="app-sidebar__brand">
           <div className="eyebrow">Interior AI</div>
-          <h2 className="app-sidebar__title">
-            Studio
-            <br />
-            Operating Desk
-          </h2>
         </div>
+
+        <nav className="sidebar-nav">
+          {nav.map((item) => {
+            const isActive = pathname === item.href
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`sidebar-nav__link${isActive ? ' is-active' : ''}`}
+              >
+                <span>{item.label}</span>
+              </Link>
+            )
+          })}
+        </nav>
 
         {accounts.length > 0 && (
           <div className="app-sidebar__account">
@@ -95,33 +95,18 @@ export default function Sidebar() {
                   className="account-menu__item"
                   onClick={() => {
                     setShowAccountMenu(false)
-                    router.push('/')
+                    router.push('/signin')
                   }}
                 >
                   <div className="account-chip__meta">
                     <div className="account-chip__name">Add account</div>
-                    <div className="account-chip__provider">Return to sign-in</div>
+                    <div className="account-chip__provider">Sign-in options</div>
                   </div>
                 </button>
               </div>
             )}
           </div>
         )}
-
-        <nav className="sidebar-nav">
-          {nav.map((item) => {
-            const isActive = pathname === item.href
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`sidebar-nav__link${isActive ? ' is-active' : ''}`}
-              >
-                <span>{item.label}</span>
-              </Link>
-            )
-          })}
-        </nav>
 
         <div className="sidebar-footer">
           <span>v0.1.0 dev</span>

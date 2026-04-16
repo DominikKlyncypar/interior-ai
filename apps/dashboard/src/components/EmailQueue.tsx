@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useEffectEvent, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useAccount } from '@/context/AccountContext'
 import { getSupabase } from '@/lib/supabase'
 import { buildEmailPreviewDocument } from '@/lib/email-render'
@@ -51,11 +51,15 @@ export default function EmailQueue() {
   const [emails, setEmails] = useState<Email[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<Email | null>(null)
+  const [draftReply, setDraftReply] = useState('')
+  const [activeAction, setActiveAction] = useState<'approved' | 'dismissed' | null>(null)
+  const [actionError, setActionError] = useState('')
   const { activeAccount } = useAccount()
   const emailPreviewHtml = selected ? buildEmailPreviewDocument(selected.body_html, selected.body_text || selected.body) : null
 
-  const fetchEmails = useEffectEvent(async () => {
+  const fetchEmails = useCallback(async () => {
     setLoading(true)
+    setActionError('')
     const supabase = getSupabase()
     const { data, error } = await supabase
       .from('emails')
@@ -72,11 +76,16 @@ export default function EmailQueue() {
     }
 
     setLoading(false)
-  })
+  }, [activeAccount])
 
   useEffect(() => {
     if (activeAccount) void fetchEmails()
-  }, [activeAccount])
+  }, [activeAccount, fetchEmails])
+
+  useEffect(() => {
+    setDraftReply(selected?.draft_reply || '')
+    setActionError('')
+  }, [selected?.id, selected?.draft_reply])
 
   const markEmailAsRead = async (id: string) => {
     const response = await fetch('/api/emails/mark-read', {
@@ -120,47 +129,72 @@ export default function EmailQueue() {
   }
 
   const updateStatus = async (id: string, status: string) => {
+    setActiveAction(status === 'approved' ? 'approved' : 'dismissed')
+    setActionError('')
     const supabase = getSupabase()
 
-    if (status === 'approved') {
-      const textarea = document.querySelector('textarea') as HTMLTextAreaElement
-      const draftReply = textarea?.value || selected?.draft_reply || ''
+    try {
+      if (status === 'approved') {
+        const res = await fetch('/api/emails/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ emailId: id, draftReply }),
+        })
 
-      const res = await fetch('/api/emails/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ emailId: id, draftReply }),
-      })
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: 'Send failed' }))
+          throw new Error(err.error || 'Send failed')
+        }
 
-      if (!res.ok) {
-        const err = await res.json()
-        console.error('Send failed:', err)
-        return
-      }
-
-      try {
-        await markEmailAsRead(id)
-      } catch (err) {
-        console.error('Mark read failed:', err)
-      }
-    } else {
-      await supabase.from('emails').update({ status }).eq('id', id)
-
-      if (status === 'dismissed') {
         try {
           await markEmailAsRead(id)
         } catch (err) {
           console.error('Mark read failed:', err)
         }
-      }
-    }
+      } else {
+        const { error } = await supabase.from('emails').update({ status }).eq('id', id)
+        if (error) throw error
 
-    setEmails((current) => current.filter((email) => email.id !== id))
-    setSelected((current) => (current?.id === id ? null : current))
+        if (status === 'dismissed') {
+          try {
+            await markEmailAsRead(id)
+          } catch (err) {
+            console.error('Mark read failed:', err)
+          }
+        }
+      }
+
+      setEmails((current) => {
+        const nextEmails = current.filter((email) => email.id !== id)
+        const nextSelected = getNextSelectedEmail(current, id)
+        setSelected(nextSelected ? nextEmails.find((email) => email.id === nextSelected.id) ?? nextEmails[0] ?? null : nextEmails[0] ?? null)
+        return nextEmails
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Email action failed'
+      setActionError(message)
+    } finally {
+      setActiveAction(null)
+    }
+  }
+
+  if (!activeAccount) {
+    return (
+      <div className="empty-state">
+        <h2 className="empty-state__title">No account selected</h2>
+        <p className="empty-state__copy">Add or choose an account to review email.</p>
+      </div>
+    )
   }
 
   if (loading) {
-    return <div className="panel">Loading emails...</div>
+    return (
+      <div className="panel email-loading">
+        <div className="email-loading__bar" />
+        <div className="email-loading__bar" />
+        <div className="email-loading__bar" />
+      </div>
+    )
   }
 
   if (emails.length === 0) {
@@ -173,7 +207,18 @@ export default function EmailQueue() {
   }
 
   return (
-    <div className={`queue-layout${selected ? '' : ' queue-layout--single'}`}>
+    <div className="email-workspace">
+      <div className="email-toolbar">
+        <div>
+          <div className="eyebrow">Email queue</div>
+          <h1 className="email-toolbar__title">{emails.length} pending</h1>
+        </div>
+        <button type="button" className="button button--quiet" onClick={() => void fetchEmails()}>
+          Refresh
+        </button>
+      </div>
+
+      <div className={`queue-layout${selected ? '' : ' queue-layout--single'}`}>
       <div className="queue-list">
         {emails.map((email) => {
           const isSelected = selected?.id === email.id
@@ -190,7 +235,7 @@ export default function EmailQueue() {
                   className="pill"
                   style={{ background: 'rgba(255,255,255,0.58)', color: categoryColor[email.category] || 'var(--mid)' }}
                 >
-                  {email.category}
+                  {formatLabel(email.category)}
                 </div>
               </div>
 
@@ -199,7 +244,7 @@ export default function EmailQueue() {
               <div className="queue-item__meta">
                 <div className="queue-meta">{email.contacts?.email || email.from_email || 'Unknown sender'}</div>
                 <div className="pill" style={{ background: 'rgba(255,255,255,0.58)', color: urgencyColor[email.urgency] || 'var(--mid)' }}>
-                  {email.urgency}
+                  {formatLabel(email.urgency)}
                 </div>
               </div>
             </button>
@@ -215,7 +260,7 @@ export default function EmailQueue() {
           <div className="inline-row">
             <div className="queue-meta">{selected.contacts?.email || selected.from_email || 'Unknown sender'}</div>
             <div className="pill" style={{ background: 'var(--gold-pale)', color: categoryColor[selected.category] || 'var(--mid)' }}>
-              {selected.category}
+              {formatLabel(selected.category)}
             </div>
           </div>
 
@@ -246,7 +291,7 @@ export default function EmailQueue() {
                       <div>
                         <div>{attachment.filename}</div>
                         <div className="attachment-card__meta">
-                          {attachment.mime_type} | {formatBytes(attachment.size_bytes)} | {attachment.status}
+                          {formatBytes(attachment.size_bytes)} | {formatLabel(attachment.status)}
                         </div>
                       </div>
 
@@ -285,23 +330,44 @@ export default function EmailQueue() {
           <div className="detail-block">
             <div className="field-label">Draft Reply</div>
             <div className="field">
-              <textarea defaultValue={selected.draft_reply} style={{ minHeight: '14rem' }} />
+              <textarea value={draftReply} onChange={(event) => setDraftReply(event.target.value)} style={{ minHeight: '16rem' }} />
             </div>
           </div>
 
+          {actionError && <div className="error-text">{actionError}</div>}
+
           <div className="action-row" style={{ marginTop: '1.5rem' }}>
-            <button type="button" className="button button--dark" onClick={() => updateStatus(selected.id, 'approved')}>
-              Approve
+            <button
+              type="button"
+              className="button button--dark"
+              onClick={() => updateStatus(selected.id, 'approved')}
+              disabled={Boolean(activeAction)}
+            >
+              {activeAction === 'approved' ? 'Approving...' : 'Approve'}
             </button>
-            <button type="button" className="button button--quiet" onClick={() => updateStatus(selected.id, 'dismissed')}>
-              Dismiss
+            <button
+              type="button"
+              className="button button--quiet"
+              onClick={() => updateStatus(selected.id, 'dismissed')}
+              disabled={Boolean(activeAction)}
+            >
+              {activeAction === 'dismissed' ? 'Dismissing...' : 'Dismiss'}
             </button>
           </div>
         </aside>
       )}
     </div>
+    </div>
   )
 }
+
+const getNextSelectedEmail = (emails: Email[], currentId: string) => {
+  const currentIndex = emails.findIndex((email) => email.id === currentId)
+  if (currentIndex === -1) return emails[0] ?? null
+  return emails[currentIndex + 1] ?? emails[currentIndex - 1] ?? null
+}
+
+const formatLabel = (value: string) => value.replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
 
 const formatBytes = (value: number) => {
   if (!value) return '0 B'
