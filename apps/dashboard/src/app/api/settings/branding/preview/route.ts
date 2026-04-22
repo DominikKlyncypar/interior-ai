@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { buildReplyContent } from '@/lib/email-compose'
 import {
   extractSignatureImageSource,
@@ -11,8 +10,9 @@ import { buildReplyHtml } from '@/lib/email-brand'
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.email) {
+    const authClient = await createSupabaseServerClient()
+    const { data: { user } } = await authClient.auth.getUser()
+    if (!user?.email) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 

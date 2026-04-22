@@ -10,6 +10,7 @@
     "test:email": "tsx src/lib/email-compose.test.ts"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.99.0",
     "@tanstack/react-query": "^5.90.21",
     "googleapis": "^171.4.0",

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabase } from '@/lib/supabase'
+import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { google } from 'googleapis'
 import { buildReplyContent, buildGmailReplyMime, encodeGmailRawMessage } from '@/lib/email-compose'
 import {
@@ -15,9 +16,15 @@ import {
 
 export async function POST(req: NextRequest) {
   try {
+    const authSupabase = await createSupabaseServerClient()
+    const { data: { user } } = await authSupabase.auth.getUser()
+    if (!user?.email) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    }
+
     const { emailId, draftReply } = await req.json()
 
-    const supabase = getSupabase()
+    const supabase = getSupabaseAdmin()
 
     // Get the email
     const { data: email, error: emailError } = await supabase

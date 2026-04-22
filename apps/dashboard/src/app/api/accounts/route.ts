@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server'
-import { getSupabase } from '@/lib/supabase'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
 
 export async function GET() {
-  const supabase = getSupabase()
+  const supabase = await createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user?.email) {
+    return NextResponse.json([], { status: 401 })
+  }
+
   const { data, error } = await supabase
     .from('connected_accounts')
     .select('id, user_email, provider')

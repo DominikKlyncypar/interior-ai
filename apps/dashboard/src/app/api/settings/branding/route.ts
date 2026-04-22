@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.email) {
+    const authClient = await createSupabaseServerClient()
+    const { data: { user } } = await authClient.auth.getUser()
+    if (!user?.email) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    const accountEmail = req.nextUrl.searchParams.get('accountEmail') || session.user.email
+    const accountEmail = req.nextUrl.searchParams.get('accountEmail') || user.email
     const supabase = getSupabaseAdmin()
     const { data, error } = await supabase
       .from('connected_accounts')
@@ -30,8 +30,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.email) {
+    const authClient = await createSupabaseServerClient()
+    const { data: { user } } = await authClient.auth.getUser()
+    if (!user?.email) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 

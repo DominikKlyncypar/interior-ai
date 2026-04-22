@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabase } from '@/lib/supabase'
-import { getServerSession } from 'next-auth'
+import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession()
+    const supabase = await createSupabaseServerClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
-    if (!session?.user?.email) {
+    if (!user?.email) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
@@ -16,12 +17,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid fetchSince value' }, { status: 400 })
     }
 
-    const supabase = getSupabase()
+    const admin = getSupabaseAdmin()
 
-    let query = supabase
+    let query = admin
       .from('connected_accounts')
       .update({ fetch_since: fetchSince })
-      .eq('user_email', session.user.email)
+      .eq('user_email', user.email)
 
     if (provider) {
       query = query.eq('provider', provider)

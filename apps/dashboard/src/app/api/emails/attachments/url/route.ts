@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
 
 export async function POST(req: NextRequest) {
   try {
+    const authSupabase = await createSupabaseServerClient()
+    const { data: { user } } = await authSupabase.auth.getUser()
+    if (!user?.email) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    }
+
     const { attachmentId, action } = await req.json()
 
     if (!attachmentId) {

@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { signOut } from 'next-auth/react'
+import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { useState } from 'react'
 import { useAccount } from '@/context/AccountContext'
 
@@ -113,7 +113,11 @@ export default function Sidebar() {
           <button
             type="button"
             className="sidebar-footer__action"
-            onClick={() => signOut({ callbackUrl: '/' })}
+            onClick={async () => {
+              const supabase = createSupabaseBrowserClient()
+              await supabase.auth.signOut()
+              router.push('/')
+            }}
           >
             Sign out
           </button>

@@ -1,6 +1,8 @@
 'use client'
-import { signIn, useSession } from 'next-auth/react'
+import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import type { User } from '@supabase/supabase-js'
 
 const stats = [
   { value: '8', label: 'Agents planned' },
@@ -50,16 +52,48 @@ const steps = [
 ]
 
 export default function HomePage() {
-  const { data: session } = useSession()
+  const [user, setUser] = useState<User | null>(null)
   const router = useRouter()
+
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient()
+    supabase.auth.getUser().then(({ data }) => setUser(data.user))
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const signInWithGoogle = () => {
+    const supabase = createSupabaseBrowserClient()
+    supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=/onboarding&provider=google`,
+        scopes: 'https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/gmail.send',
+        queryParams: { access_type: 'offline', prompt: 'consent' },
+      },
+    })
+  }
+
+  const signInWithAzure = () => {
+    const supabase = createSupabaseBrowserClient()
+    supabase.auth.signInWithOAuth({
+      provider: 'azure',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=/onboarding&provider=azure`,
+        scopes: 'offline_access https://graph.microsoft.com/Mail.Read https://graph.microsoft.com/Mail.ReadWrite https://graph.microsoft.com/Mail.Send https://graph.microsoft.com/User.Read',
+      },
+    })
+  }
 
   return (
     <div className="landing-shell">
       <nav className="landing-nav">
         <div className="landing-nav__brand">Interior AI</div>
-        {session && (
+        {user && (
           <button type="button" className="landing-nav__button" onClick={() => router.push('/dashboard')}>
-            <span>{session.user?.name?.split(' ')[0] || 'User'}</span>
+            <span>{(user.user_metadata?.full_name as string)?.split(' ')[0] || user.email?.split('@')[0] || 'User'}</span>
             <span className="eyebrow eyebrow--muted" style={{ marginBottom: 0 }}>
               Dashboard
             </span>
@@ -82,14 +116,14 @@ export default function HomePage() {
             <button
               type="button"
               className="button button--primary"
-              onClick={() => signIn('google', { callbackUrl: '/onboarding' })}
+              onClick={signInWithGoogle}
             >
               Sign in with Gmail
             </button>
             <button
               type="button"
               className="button button--secondary"
-              onClick={() => signIn('azure-ad', { callbackUrl: '/onboarding' })}
+              onClick={signInWithAzure}
             >
               Sign in with Outlook
             </button>
@@ -182,14 +216,14 @@ export default function HomePage() {
           <button
             type="button"
             className="button button--primary"
-            onClick={() => signIn('google', { callbackUrl: '/onboarding' })}
+            onClick={signInWithGoogle}
           >
             Get started with Gmail
           </button>
           <button
             type="button"
             className="button button--secondary"
-            onClick={() => signIn('azure-ad', { callbackUrl: '/onboarding' })}
+            onClick={signInWithAzure}
           >
             Get started with Outlook
           </button>
