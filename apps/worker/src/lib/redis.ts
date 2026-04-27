@@ -1,17 +1,24 @@
 import { ConnectionOptions } from 'bullmq'
-import logger from './logger'
 
 const getConnection = (): ConnectionOptions => {
-  const config = {
-    host: process.env.REDIS_HOST,
-    port: parseInt(process.env.REDIS_PORT || '6379'),
-    password: process.env.REDIS_PASSWORD,
-    tls: {
-      rejectUnauthorized: false
+  if (process.env.REDIS_URL) {
+    const url = new URL(process.env.REDIS_URL)
+    return {
+      host: url.hostname,
+      port: Number(url.port) || 6379,
+      username: url.username || undefined,
+      password: url.password || undefined,
+      tls: url.protocol === 'rediss:' ? { rejectUnauthorized: false } : undefined,
     }
   }
-  logger.debug({ host: config.host, port: config.port }, 'Redis connection config')
-  return config
+
+  return {
+    host: process.env.REDIS_HOST,
+    port: parseInt(process.env.REDIS_PORT || '6379'),
+    username: process.env.REDIS_USERNAME || undefined,
+    password: process.env.REDIS_PASSWORD || undefined,
+    tls: { rejectUnauthorized: false },
+  }
 }
 
 export default getConnection
