@@ -142,3 +142,6 @@ vite.config.ts.timestamp-*
 #Claude Code
 CLAUDE.md
 .claude/
+
+#MCP Files
+.mcp.json

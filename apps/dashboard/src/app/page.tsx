@@ -56,6 +56,19 @@ export default function HomePage() {
   const router = useRouter()
 
   useEffect(() => {
+    // If Supabase's redirect URL isn't in the allowed list it falls back to the
+    // site URL, landing `?code=` here instead of /auth/callback. Detect and
+    // forward it so the exchange still completes.
+    const params = new URLSearchParams(window.location.search)
+    const code = params.get('code')
+    if (code) {
+      const provider = sessionStorage.getItem('oauth_provider') ?? ''
+      sessionStorage.removeItem('oauth_provider')
+      const dest = `/auth/callback?code=${encodeURIComponent(code)}`
+      window.location.replace(dest)
+      return
+    }
+
     const supabase = createSupabaseBrowserClient()
     supabase.auth.getUser().then(({ data }) => setUser(data.user))
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -65,11 +78,12 @@ export default function HomePage() {
   }, [])
 
   const signInWithGoogle = () => {
+    sessionStorage.setItem('oauth_provider', 'google')
     const supabase = createSupabaseBrowserClient()
     supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/onboarding&provider=google`,
+        redirectTo: `${window.location.origin}/auth/callback`,
         scopes: 'https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/gmail.send',
         queryParams: { access_type: 'offline', prompt: 'consent' },
       },
@@ -77,11 +91,12 @@ export default function HomePage() {
   }
 
   const signInWithAzure = () => {
+    sessionStorage.setItem('oauth_provider', 'azure')
     const supabase = createSupabaseBrowserClient()
     supabase.auth.signInWithOAuth({
       provider: 'azure',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/onboarding&provider=azure`,
+        redirectTo: `${window.location.origin}/auth/callback`,
         scopes: 'offline_access https://graph.microsoft.com/Mail.Read https://graph.microsoft.com/Mail.ReadWrite https://graph.microsoft.com/Mail.Send https://graph.microsoft.com/User.Read',
       },
     })
