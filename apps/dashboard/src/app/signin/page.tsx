@@ -1,39 +1,30 @@
 'use client'
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
-import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import type { User } from '@supabase/supabase-js'
 
 export default function SignInPage() {
-  const [user, setUser] = useState<User | null>(null)
   const router = useRouter()
 
-  useEffect(() => {
+  const connectGoogle = () => {
+    sessionStorage.setItem('oauth_provider', 'google')
     const supabase = createSupabaseBrowserClient()
-    supabase.auth.getUser().then(({ data }) => setUser(data.user))
-  }, [])
-
-  const hasGoogle = user?.identities?.some((id) => id.provider === 'google')
-  const hasAzure = user?.identities?.some((id) => id.provider === 'azure')
-
-  const linkGoogle = () => {
-    const supabase = createSupabaseBrowserClient()
-    supabase.auth.linkIdentity({
+    supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/settings&provider=google`,
+        redirectTo: `${window.location.origin}/auth/callback`,
         scopes: 'https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/gmail.send',
         queryParams: { access_type: 'offline', prompt: 'consent' },
       },
     })
   }
 
-  const linkAzure = () => {
+  const connectAzure = () => {
+    sessionStorage.setItem('oauth_provider', 'azure')
     const supabase = createSupabaseBrowserClient()
-    supabase.auth.linkIdentity({
+    supabase.auth.signInWithOAuth({
       provider: 'azure',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/settings&provider=azure`,
+        redirectTo: `${window.location.origin}/auth/callback`,
         scopes: 'offline_access https://graph.microsoft.com/Mail.Read https://graph.microsoft.com/Mail.ReadWrite https://graph.microsoft.com/Mail.Send https://graph.microsoft.com/User.Read',
       },
     })
@@ -53,22 +44,19 @@ export default function SignInPage() {
             <p className="page-copy">
               Add Gmail or Outlook to the operating desk without returning to the marketing page.
             </p>
-            {user && (
-              <button type="button" className="button button--quiet" onClick={() => router.push('/dashboard')}>
-                Back to dashboard
-              </button>
-            )}
+            <button type="button" className="button button--quiet" onClick={() => router.push('/dashboard')}>
+              Back to dashboard
+            </button>
           </div>
 
           <div className="onboarding-option-list">
             <button
               type="button"
               className="onboarding-option"
-              onClick={linkGoogle}
-              disabled={hasGoogle ?? false}
+              onClick={connectGoogle}
             >
               <div>
-                <h2 className="onboarding-option__title">Gmail {hasGoogle && '(connected)'}</h2>
+                <h2 className="onboarding-option__title">Gmail</h2>
                 <p className="onboarding-option__copy">Connect a Google account for Gmail review and sending.</p>
               </div>
               <span className="selection-dot" aria-hidden="true" />
@@ -77,11 +65,10 @@ export default function SignInPage() {
             <button
               type="button"
               className="onboarding-option"
-              onClick={linkAzure}
-              disabled={hasAzure ?? false}
+              onClick={connectAzure}
             >
               <div>
-                <h2 className="onboarding-option__title">Outlook {hasAzure && '(connected)'}</h2>
+                <h2 className="onboarding-option__title">Outlook</h2>
                 <p className="onboarding-option__copy">Connect a Microsoft account for Outlook review and sending.</p>
               </div>
               <span className="selection-dot" aria-hidden="true" />
