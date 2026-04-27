@@ -39,7 +39,9 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (error || !data.session) {
-      return NextResponse.redirect(`${origin}/?error=auth_failed`)
+      console.error('[auth/callback] exchangeCodeForSession failed:', error?.message, error?.status)
+      console.error('[auth/callback] cookies present:', request.cookies.getAll().map(c => c.name))
+      return NextResponse.redirect(`${origin}/?error=auth_failed&detail=${encodeURIComponent(error?.message ?? 'no_session')}`)
     }
 
     const { session } = data
